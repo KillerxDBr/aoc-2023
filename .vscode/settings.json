@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        "cstdio": "c",
+        "*.def": "c",
+        "string.h": "c",
+        "ctype.h": "c",
+        "math.h": "c",
+        "tgmath.h": "c",
+        "stdbool.h": "c",
+        "__locale": "c",
+        "ostream": "c",
+        "print": "c"
+    }
+}
