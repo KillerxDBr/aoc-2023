@@ -7,7 +7,7 @@
 #define GRN_CUBE 13
 #define BLU_CUBE 14
 
-#define CUBE_QTD 128
+#define CUBE_QTD 100
 
 typedef struct cubes_s
 {
@@ -25,7 +25,8 @@ int main(void)
     FILE *fd = fopen(input, "rt");
     if (fd == NULL)
     {
-        fprintf(stderr, "Couldn't open file %s\n", input);
+        fprintf(stderr, "Couldn't open file %s: ", input);
+        perror(NULL);
         return 1;
     }
 
@@ -41,11 +42,11 @@ int main(void)
         // puts("getId OK!\n");
         calcCubes(&cubes[i], line);
         // puts("calcCubes OK!");
-        printf("==========\n Cube: %d\n    Id:%zu\n    Plays: %zu\n",i+1,cubes[i].id,cubes[i].plays);
-        if(cubes[i].notValid)
-            printf("    Cube %d is not valid\n",i+1);
+        printf("==========\n Cube: %d\n    Id:%zu\n    Plays: %zu\n", i + 1, cubes[i].id, cubes[i].plays);
+        if (cubes[i].notValid)
+            printf("    Cube %d is not valid\n", i + 1);
         else
-            printf("    Cube %d is valid\n",i+1);
+            printf("    Cube %d is valid\n", i + 1);
         i++;
     }
     fclose(fd);

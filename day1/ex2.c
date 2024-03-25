@@ -15,7 +15,8 @@ int main(void)
     FILE *fd = fopen(input, "rt");
     if (fd == NULL)
     {
-        fprintf(stderr, "Couldn't open file %s\n", input);
+        fprintf(stderr, "Couldn't open file %s: ", input);
+        perror(NULL);
         return 1;
     }
 
@@ -51,7 +52,7 @@ int main(void)
                         maxDist = tmp - line;
                     maxDist = fmax(maxDist, tmp - line);
                     minDist = fmin(minDist, tmp - line);
-                    printf("minDist: %zu\nmaxDist: %zu\n",minDist,maxDist);
+                    printf("minDist: %zu\nmaxDist: %zu\n", minDist, maxDist);
                     tmp++;
                     tmp = strstr(tmp, numeros[i]);
                 }

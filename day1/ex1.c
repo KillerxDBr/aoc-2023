@@ -10,8 +10,8 @@ int main(void)
     FILE *fd = fopen(input, "rt");
     if (fd == NULL)
     {
-        fprintf(stderr, "Couldn't open file %s\n", input);
-        return 1;
+        fprintf(stderr, "Couldn't open file %s: ", input);
+        perror(NULL);
     }
     size_t soma = 0;
     char line[256];
