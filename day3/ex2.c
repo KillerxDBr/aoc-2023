@@ -49,12 +49,6 @@ typedef struct
     size_t capacity;
 } str;
 
-// typedef struct
-// {
-//     size_t x, y, size;
-//     bool isSymble;
-// } Digit;
-
 typedef struct vector2
 {
     size_t x, y;
@@ -81,7 +75,7 @@ typedef struct
     size_t capacity;
 } Symbles;
 
-#define SMALL 1
+#define SMALL 0
 #if SMALL
 #define LINE_SIZE 10
 #else
@@ -141,7 +135,7 @@ int main(void)
                 {
                     da_append(&symbles, n);
                 }
-                else if(isdigit(n.c))
+                else if (isdigit(n.c))
                 {
 
                     node_t *prev = &n;
@@ -151,7 +145,6 @@ int main(void)
                         nextNode->pos.x = n.pos.x;
                         nextNode->pos.y = n.pos.y + k;
                         nextNode->c = strings.items[i][j + k];
-                        // nextNode->isSymble = !isdigit(nextNode->c);
                         nextNode->next = NULL;
                         prev->next = nextNode;
                         prev = nextNode;
@@ -163,74 +156,67 @@ int main(void)
         }
     }
 
-    size_t soma = 0;
+    size_t soma = 0, tmpSoma = 1;
     int nx, ny;
 
     for (size_t i = 0; i < symbles.count; i++)
     {
-        node_t *prevHead = NULL;
+        // node_t *prevHead = NULL;
+        bool countedNumbers[digits.count];
+        for (int b = 0; b < digits.count; b++)
+            countedNumbers[b] = false;
+        size_t count = 0;
         for (int j = -1; j < 2; j++)
         {
             for (int k = -1; k < 2; k++)
             {
                 nx = symbles.items[i].pos.x + j;
                 ny = symbles.items[i].pos.y + k;
-
                 for (size_t l = 0; l < digits.count; l++)
                 {
                     node_t *head = &digits.items[l];
                     node_t *ptr = head;
-                    size_t len = 0;
-                    size_t counter = 0;
                     bool counting = false;
                     while (ptr != NULL)
                     {
                         if (ptr->pos.x == nx && ptr->pos.y == ny)
                         {
-                            counter++;
+                            if (countedNumbers[l])
+                                goto brklp;
+                            countedNumbers[l] = true;
                             counting = true;
                         }
-                        len++;
+                        if (counting)
+                        {
+                            char digitsToConvert[10] = {0};
+                            node_t *ptr2 = head;
+                            while (ptr2 != NULL)
+                            {
+                                // strcat(&digitsToConvert, ptr2->c);
+                                digitsToConvert[strlen(digitsToConvert)] = ptr2->c;
+                                ptr2 = ptr2->next;
+                            }
+                            printf("%s\n", digitsToConvert);
+                            tmpSoma *= strtoull(digitsToConvert, NULL, 10);
+                            count++;
+                            counting = false;
+                        }
                         ptr = ptr->next;
                     }
-                    if (counter == 2 && counting && head != prevHead)
-                    {
-                        prevHead = head;
-                        char *tmp = calloc(len + 1, sizeof(char));
-                        while (head != NULL)
-                        {
-                            // putc(head->c, stdout);
-                            sprintf(tmp, "%s%c", tmp, head->c);
-                            head = head->next;
-                        }
-                        // printf("\nSomando: %s\n",tmp);
-                        soma += strtoull(tmp, NULL, 10);
-                        // printf("Resultado parcial: %zu\n",soma);
-                    }
+                    // soma += tmpSoma;
+                brklp:;
+                }
+                if (count == 2 && tmpSoma != 1)
+                {
+                    printf("Somando %zu a %zu\n",tmpSoma,soma);
+                    soma += tmpSoma;
+                    tmpSoma = 1;
                 }
             }
         }
+        printf("Simbolo %zu tem %zu numeros\n", i + 1, count);
+        tmpSoma = 1;
     }
-    /*
-    printf("Digits:\n");
-    for (size_t l = 0; l < digits.count; l++)
-    {
-        node_t *ptr = &digits.items[l];
-        printf("(%02zu,%02zu): ", ptr->pos.x, ptr->pos.y);
-        while (ptr != NULL)
-        {
-            printf("%c", ptr->c);
-            ptr = ptr->next;
-        }
-        printf("\n");
-    }
-    printf("\n");
-    printf("Symbles:\n");
-    for (size_t l = 0; l < symbles.count; l++)
-    {
-        printf("(%02zu,%02zu): %c\n", symbles.items[l].pos.x, symbles.items[l].pos.y, symbles.items[l].c);
-    }
-    // exit(0);*/
 
     da_free_ptr(&strings);
     da_free(&digits);

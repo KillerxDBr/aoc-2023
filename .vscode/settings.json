@@ -31,6 +31,10 @@
         "deque": "c",
         "list": "c",
         "queue": "c",
-        "stack": "c"
+        "stack": "c",
+        "windows.h": "c",
+        "windef.h": "c",
+        "winbase.h": "c",
+        "string_s.h": "c"
     }
 }
