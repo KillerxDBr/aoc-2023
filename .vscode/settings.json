@@ -35,6 +35,20 @@
         "windows.h": "c",
         "windef.h": "c",
         "winbase.h": "c",
-        "string_s.h": "c"
+        "string_s.h": "c",
+        "atomic": "c",
+        "*.tcc": "c",
+        "cstddef": "c",
+        "cwchar": "c",
+        "iomanip": "c",
+        "iosfwd": "c",
+        "istream": "c",
+        "streambuf": "c",
+        "type_traits": "c",
+        "ios": "c",
+        "locale": "c",
+        "numbers": "c",
+        "stdint.h": "c",
+        "cstdint": "c"
     }
 }

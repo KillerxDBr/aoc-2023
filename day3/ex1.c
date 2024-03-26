@@ -116,6 +116,7 @@ int main(void)
         da_append(&strings, tmp);
         tmp = malloc(256);
     }
+    free(tmp);
 
     Digits digits = {0};
     Symbles symbles = {0};
