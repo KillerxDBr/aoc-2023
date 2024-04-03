@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #define da_free(xs)             \
     do                          \
@@ -63,15 +64,17 @@ typedef struct
     size_t capacity;
 } Strings;
 
+void updateNumbers(Strings *strings, Numbers *yourNumbers, Numbers *winningNumbers, size_t index);
+void updateStrings(Strings *strings, size_t ysize, size_t wsize, Numbers *yourNumbers, Numbers *winningNumbers, size_t index, Numbers *result);
+
+size_t originalSize;
+
 #define SMALL 0
-#if SMALL
-#define LINE_SIZE 48
-#else
-#define LINE_SIZE 116
-#endif
+#define BUFFER_SIZE 256
 
 int main(void)
 {
+    const char *separator = "===================";
 #if SMALL
     const char *input = "small.txt";
 #else
@@ -89,87 +92,121 @@ int main(void)
     Numbers winningNumbers = {0};
     Numbers result = {0};
 
-    char *tmp = malloc(256);
-    while (fgets(tmp, 255, fd) != NULL)
+    char *tmp = malloc(BUFFER_SIZE);
+    while (fgets(tmp, BUFFER_SIZE - 1, fd) != NULL)
     {
-        tmp[LINE_SIZE] = 0;
+        char *endLine = strchr(tmp, '\n');
+        if (endLine != NULL)
+            endLine[0] = '\0';
         tmp = realloc(tmp, strlen(tmp) + 1);
         da_append(&strings, tmp);
-        tmp = malloc(256);
+        tmp = malloc(BUFFER_SIZE);
     }
     fclose(fd);
     free(tmp);
 
-    char *sep = NULL;
-    size_t n, wsize, ysize;
-    for (size_t i = 0; i < strings.count; i++)
+    originalSize = strings.count;
+    size_t tmpIndex;
+    size_t index = 0;
+    updateNumbers(&strings, &yourNumbers, &winningNumbers, index);
+    size_t wsize = winningNumbers.count / originalSize, ysize = yourNumbers.count / originalSize;
+
+    do
     {
-        wsize = 0;
-        ysize = 0;
+        tmpIndex = strings.count;
+        updateStrings(&strings, ysize, wsize, &yourNumbers, &winningNumbers, index, &result);
+        index = tmpIndex;
+        updateNumbers(&strings, &yourNumbers, &winningNumbers, index);
+    } while (index != strings.count);
 
-        tmp = strchr(strings.items[i], ':');
-        sep = strchr(strings.items[i], '|');
-        tmp++;
+    size_t rst = strings.count;
+    da_free(&yourNumbers);
+    da_free(&winningNumbers);
+    da_free(&result);
+    da_free_ptr(&strings);
+    puts(separator);
+    printf("Resultado: %zu\n",rst);
+    return 0;
+}
 
-        while (tmp < sep - 1 && tmp != NULL)
+void updateNumbers(
+    Strings *strings, Numbers *yourNumbers,
+    Numbers *winningNumbers, size_t index)
+{
+    size_t n;
+    char *str = NULL;
+    char *sep = NULL;
+
+    for (size_t i = index; i < strings->count; i++)
+    {
+
+        str = strchr(strings->items[i], ':');
+        sep = strchr(strings->items[i], '|');
+        str++;
+
+        while (str < sep - 1 && str != NULL)
         {
-            sscanf(tmp, "%zu", &n);
-            tmp++;
-            tmp++;
-            tmp = strchr(tmp, ' ');
-            da_append(&yourNumbers, n);
-            ysize++;
+            sscanf(str, "%zu", &n);
+            str++;
+            str++;
+            str = strchr(str, ' ');
+            da_append(winningNumbers, n);
         }
         sep++;
-        while (sep != NULL && sep < sep + strlen(strings.items[i]))
+
+        while (sep != NULL && sep < sep + strlen(strings->items[i]))
         {
             sscanf(sep, "%zu", &n);
             sep++;
             sep++;
             sep = strchr(sep, ' ');
-            // printf("seu numero: %d\n",n);
-            da_append(&winningNumbers, n);
-            wsize++;
+            da_append(yourNumbers, n);
         }
-
-        printf("%s\n", strings.items[i]);
     }
+}
 
-    size_t soma = 0, tmpSoma = 0;
+void updateStrings(Strings *strings, size_t ysize, size_t wsize, Numbers *yourNumbers, Numbers *winningNumbers, size_t index, Numbers *result)
+{
     size_t wn, yn;
+    size_t n = 0;
 
-    puts("===================");
-    for (size_t i = 0; i < winningNumbers.count / wsize; i++)
+    for (size_t i = index; i < strings->count; i++)
     {
         for (size_t j = 0; j < wsize; j++)
         {
-            // if (i > j && j + i * wsize % wsize == 0)
-            //     printf("\n");
-            // printf("%02d ", winningNumbers.items[j + i * wsize]);
-            wn = winningNumbers.items[j + i * wsize];
-
+            wn = winningNumbers->items[j + i * wsize];
             for (size_t l = 0; l < ysize; l++)
             {
-                yn = yourNumbers.items[l + ysize * i];
-                if (yn != wn)
-                    continue;
-                if (tmpSoma == 0)
-                    tmpSoma++;
-                else
-                    tmpSoma *= 2;
-                break;
+                yn = yourNumbers->items[l + ysize * i];
+                if (yn == wn)
+                    n++;
             }
         }
-        da_append(&result, tmpSoma);
-        tmpSoma = 0;
+        da_append(result, n);
+        n = 0;
     }
-    // puts("\n===================");
-    for (size_t i = 0; i < result.count; i++)
-    {
-        soma += result.items[i];
-        printf("Jogo %zu: %zu\n", i + 1, result.items[i]);
-    }
-    printf("Resultado final: %zu\n", soma);
 
-    return 0;
+    char *dupString;
+
+    for (size_t i = index; i < result->count; i++)
+    {
+        if (result->items[i] == 0)
+            continue;
+        for (size_t j = 1; j <= result->items[i]; j++)
+        {
+            size_t strToDup = originalSize + 1;
+            for (size_t k = 0; k < originalSize; k++)
+            {
+                if (strcmp(strings->items[i], strings->items[k]) == 0)
+                {
+                    strToDup = k;
+                    break;
+                }
+            }
+            // printf("%zu\n", strToDup);
+            assert(strToDup < originalSize);
+            dupString = strdup(strings->items[strToDup + j]);
+            da_append(strings, dupString);
+        }
+    }
 }

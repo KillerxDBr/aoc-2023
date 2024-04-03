@@ -6,7 +6,11 @@
             "command": "C:\\msys64\\ucrt64\\bin\\gcc.exe",
             "args": [
                 "-fdiagnostics-color=always",
-                "-g",
+                "-ggdb",
+                "-Og",
+                "-Wall",
+                "-Wextra",
+                "-pedantic",
                 "${file}",
                 "-o",
                 "${fileDirname}\\${fileBasenameNoExtension}.exe"

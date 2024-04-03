@@ -10,7 +10,6 @@ int main(void)
         "five", "six", "seven", "eight", "nine",
         "1", "2", "3", "4", "5", "6", "7", "8", "9"};
     size_t numerosCount = sizeof(numeros) / sizeof(char *);
-    // printf("%zu\n",numerosCount);
     const char *input = "input.txt";
     FILE *fd = fopen(input, "rt");
     if (fd == NULL)
@@ -22,23 +21,12 @@ int main(void)
 
     char line[256];
 
-    // int rst[1024][1024];
-    // for (int i = 0; i < 1024; i++)
-    // {
-    //     for (int j = 0; j < 1024; j++)
-    //     {
-    //         rst[i][j] = -1;
-    //     }
-    // }
     size_t soma = 0, n1 = 0, n2 = 0;
     while (fgets(line, 255, fd) != NULL)
     {
         line[strlen(line) - 1] = '\0';
-        // assert(line == "eighttkbtzjz6nineeight");
         printf("%s -> (%p)\n", line, line);
-        // puts("OK!");
         size_t minDist = -1, maxDist = -1;
-        // strcpy(line, "seven9fourpdseven1four2eight\n");
         for (size_t i = 0; i < numerosCount; i++)
         {
             char *tmp = strstr(line, numeros[i]);
@@ -61,7 +49,6 @@ int main(void)
         n1 = 0;
         n2 = 0;
         char final[6] = {0};
-        // strncpy(final, fdigit, 6);
         strncpy(final, line + minDist, 6);
         final[5] = 0;
         for (int i = 0; i < numerosCount; i++)
@@ -80,7 +67,6 @@ int main(void)
                 }
             }
         }
-        // strncpy(final, ldigit, 6);
         strncpy(final, line + maxDist, 6);
         final[5] = 0;
         for (int i = 0; i < numerosCount; i++)
@@ -101,7 +87,6 @@ int main(void)
         }
         printf("String %s adicionando %zu\n\tn1 = %zu\n\tn2 = %zu\n============\n", line, (n1 + n2), n1, n2);
         soma += (n1 + n2);
-        // break;
     }
     fclose(fd);
     printf("Resultado final: %zu\n", soma);

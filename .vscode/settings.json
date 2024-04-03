@@ -49,6 +49,8 @@
         "locale": "c",
         "numbers": "c",
         "stdint.h": "c",
-        "cstdint": "c"
+        "cstdint": "c",
+        "sstream": "c",
+        "algorithm": "c"
     }
 }

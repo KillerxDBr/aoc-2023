@@ -96,13 +96,10 @@ void calcCubes(cubes_t *cubes, const char *line)
     char *start = strchr(line, ':');
     start++;
     char color[6] = {0};
-    // sscanf(start, "%zu %s", &qtd, color);
     start = strtok(start, ",;");
     while (start != NULL)
     {
-        // printf("%s\n",start);
         sscanf(start, "%zu %s", &qtd, color);
-        // printf("qtd:%zu cor: %s\n", qtd, color);
         if (strcmp(color, "red") == 0 && qtd > RED_CUBE)
         {
             cubes->notValid = true;

@@ -96,12 +96,7 @@ int main(void)
         return 1;
     }
 
-    // fseek(fd, 0, SEEK_END);
-    // size_t size = ftell(fd);
-    // fseek(fd, 0, SEEK_SET);
-
     str strings = {0};
-    // char buf[256];
     char *tmp = malloc(256);
     while (fgets(tmp, 255, fd) != NULL)
     {
@@ -193,7 +188,6 @@ int main(void)
                             node_t *ptr2 = head;
                             while (ptr2 != NULL)
                             {
-                                // strcat(&digitsToConvert, ptr2->c);
                                 digitsToConvert[strlen(digitsToConvert)] = ptr2->c;
                                 ptr2 = ptr2->next;
                             }
@@ -204,12 +198,11 @@ int main(void)
                         }
                         ptr = ptr->next;
                     }
-                    // soma += tmpSoma;
                 brklp:;
                 }
                 if (count == 2 && tmpSoma != 1)
                 {
-                    printf("Somando %zu a %zu\n",tmpSoma,soma);
+                    printf("Somando %zu a %zu\n", tmpSoma, soma);
                     soma += tmpSoma;
                     tmpSoma = 1;
                 }

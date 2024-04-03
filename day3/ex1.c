@@ -102,12 +102,7 @@ int main(void)
         return 1;
     }
 
-    // fseek(fd, 0, SEEK_END);
-    // size_t size = ftell(fd);
-    // fseek(fd, 0, SEEK_SET);
-
     str strings = {0};
-    // char buf[256];
     char *tmp = malloc(256);
     while (fgets(tmp, 255, fd) != NULL)
     {
@@ -152,7 +147,6 @@ int main(void)
                         nextNode->pos.x = n.pos.x;
                         nextNode->pos.y = n.pos.y + k;
                         nextNode->c = strings.items[i][j + k];
-                        // nextNode->isSymble = !isdigit(nextNode->c);
                         nextNode->next = NULL;
                         prev->next = nextNode;
                         prev = nextNode;
@@ -198,38 +192,15 @@ int main(void)
                         char *tmp = calloc(len + 1, sizeof(char));
                         while (head != NULL)
                         {
-                            // putc(head->c, stdout);
                             sprintf(tmp, "%s%c", tmp, head->c);
                             head = head->next;
                         }
-                        // printf("\nSomando: %s\n",tmp);
                         soma += strtoull(tmp, NULL, 10);
-                        // printf("Resultado parcial: %zu\n",soma);
                     }
                 }
             }
         }
     }
-    /*
-    printf("Digits:\n");
-    for (size_t l = 0; l < digits.count; l++)
-    {
-        node_t *ptr = &digits.items[l];
-        printf("(%02zu,%02zu): ", ptr->pos.x, ptr->pos.y);
-        while (ptr != NULL)
-        {
-            printf("%c", ptr->c);
-            ptr = ptr->next;
-        }
-        printf("\n");
-    }
-    printf("\n");
-    printf("Symbles:\n");
-    for (size_t l = 0; l < symbles.count; l++)
-    {
-        printf("(%02zu,%02zu): %c\n", symbles.items[l].pos.x, symbles.items[l].pos.y, symbles.items[l].c);
-    }
-    // exit(0);*/
 
     da_free_ptr(&strings);
     da_free(&digits);
