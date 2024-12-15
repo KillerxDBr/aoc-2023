@@ -1,75 +1,64 @@
+#include <ctype.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include <string.h>
-#include <ctype.h>
 
-#define da_free(xs)             \
-    do                          \
-    {                           \
-        if ((xs)->count > 0)    \
-        {                       \
-            free((xs)->items);  \
-            (xs)->count = 0;    \
-            (xs)->capacity = 0; \
-        }                       \
+#define da_free(xs)                                                                                                                        \
+    do {                                                                                                                                   \
+        if ((xs)->count > 0) {                                                                                                             \
+            free((xs)->items);                                                                                                             \
+            (xs)->count = 0;                                                                                                               \
+            (xs)->capacity = 0;                                                                                                            \
+        }                                                                                                                                  \
     } while (0)
 
-#define da_free_ptr(xs)                              \
-    do                                               \
-    {                                                \
-        if ((xs)->count > 0)                         \
-        {                                            \
-            for (size_t i = 0; i < (xs)->count; i++) \
-                free((xs)->items[i]);                \
-            free((xs)->items);                       \
-            (xs)->count = 0;                         \
-            (xs)->capacity = 0;                      \
-        }                                            \
+#define da_free_ptr(xs)                                                                                                                    \
+    do {                                                                                                                                   \
+        if ((xs)->count > 0) {                                                                                                             \
+            for (size_t i = 0; i < (xs)->count; i++)                                                                                       \
+                free((xs)->items[i]);                                                                                                      \
+            free((xs)->items);                                                                                                             \
+            (xs)->count = 0;                                                                                                               \
+            (xs)->capacity = 0;                                                                                                            \
+        }                                                                                                                                  \
     } while (0)
 
-#define da_append(xs, x)                                                               \
-    do                                                                                 \
-    {                                                                                  \
-        if ((xs)->count >= (xs)->capacity)                                             \
-        {                                                                              \
-            if ((xs)->capacity == 0)                                                   \
-                (xs)->capacity = 256;                                                  \
-            else                                                                       \
-                (xs)->capacity *= 2;                                                   \
-            (xs)->items = realloc((xs)->items, (xs)->capacity * sizeof(*(xs)->items)); \
-        }                                                                              \
-        (xs)->items[(xs)->count++] = (x);                                              \
+#define da_append(xs, x)                                                                                                                   \
+    do {                                                                                                                                   \
+        if ((xs)->count >= (xs)->capacity) {                                                                                               \
+            if ((xs)->capacity == 0)                                                                                                       \
+                (xs)->capacity = 256;                                                                                                      \
+            else                                                                                                                           \
+                (xs)->capacity *= 2;                                                                                                       \
+            (xs)->items = realloc((xs)->items, (xs)->capacity * sizeof(*(xs)->items));                                                     \
+        }                                                                                                                                  \
+        (xs)->items[(xs)->count++] = (x);                                                                                                  \
     } while (0)
 
-typedef struct
-{
+typedef struct {
     char **items;
     size_t count;
     size_t capacity;
 } str;
 
-typedef struct vector2
-{
+typedef struct vector2 {
     size_t x, y;
 } vector2;
 
-typedef struct node
-{
+typedef struct node {
     char c;
     vector2 pos;
     struct node *next;
 } node_t;
 
-typedef struct
-{
+typedef struct {
     node_t *items;
     size_t count;
     size_t capacity;
 } Digits;
 
-typedef struct
-{
+typedef struct {
     node_t *items;
     size_t count;
     size_t capacity;
@@ -81,25 +70,22 @@ typedef struct
 #else
 #define LINE_SIZE 140
 #endif
-int main(void)
-{
+int main(void) {
 #if SMALL
     const char *input = "small.txt";
 #else
     const char *input = "input.txt";
 #endif
     FILE *fd = fopen(input, "rt");
-    if (fd == NULL)
-    {
+    if (fd == NULL) {
         fprintf(stderr, "Couldn't open file %s: ", input);
         perror(NULL);
         return 1;
     }
 
-    str strings = {0};
+    str strings = { 0 };
     char *tmp = malloc(256);
-    while (fgets(tmp, 255, fd) != NULL)
-    {
+    while (fgets(tmp, 255, fd) != NULL) {
         tmp[LINE_SIZE] = 0;
         tmp = realloc(tmp, strlen(tmp) + 1);
         da_append(&strings, tmp);
@@ -107,18 +93,15 @@ int main(void)
     }
     free(tmp);
 
-    Digits digits = {0};
-    Symbles symbles = {0};
+    Digits digits = { 0 };
+    Symbles symbles = { 0 };
 
-    for (size_t i = 0; i < strings.count; i++)
-    {
+    for (size_t i = 0; i < strings.count; i++) {
         size_t j = 0;
-        while (strings.items[i][j] != 0)
-        {
+        while (strings.items[i][j] != 0) {
             size_t inc = 1;
-            if (strings.items[i][j] != '.' && strings.items[i][j] != '\n')
-            {
-                node_t n = {0};
+            if (strings.items[i][j] != '.' && strings.items[i][j] != '\n') {
+                node_t n = { 0 };
                 n.pos.x = i;
                 n.pos.y = j;
                 n.c = strings.items[i][j];
@@ -127,16 +110,12 @@ int main(void)
                 while (isdigit(n.c) && isdigit(strings.items[i][j + inc]))
                     inc++;
 
-                if (n.c == '*')
-                {
+                if (n.c == '*') {
                     da_append(&symbles, n);
-                }
-                else if (isdigit(n.c))
-                {
+                } else if (isdigit(n.c)) {
 
                     node_t *prev = &n;
-                    for (size_t k = 1; k < inc; k++)
-                    {
+                    for (size_t k = 1; k < inc; k++) {
                         node_t *nextNode = malloc(sizeof(node_t));
                         nextNode->pos.x = n.pos.x;
                         nextNode->pos.y = n.pos.y + k;
@@ -155,39 +134,31 @@ int main(void)
     size_t soma = 0, tmpSoma = 1;
     int nx, ny;
 
-    for (size_t i = 0; i < symbles.count; i++)
-    {
+    for (size_t i = 0; i < symbles.count; i++) {
         // node_t *prevHead = NULL;
         bool countedNumbers[digits.count];
         for (int b = 0; b < digits.count; b++)
             countedNumbers[b] = false;
         size_t count = 0;
-        for (int j = -1; j < 2; j++)
-        {
-            for (int k = -1; k < 2; k++)
-            {
+        for (int j = -1; j < 2; j++) {
+            for (int k = -1; k < 2; k++) {
                 nx = symbles.items[i].pos.x + j;
                 ny = symbles.items[i].pos.y + k;
-                for (size_t l = 0; l < digits.count; l++)
-                {
+                for (size_t l = 0; l < digits.count; l++) {
                     node_t *head = &digits.items[l];
                     node_t *ptr = head;
                     bool counting = false;
-                    while (ptr != NULL)
-                    {
-                        if (ptr->pos.x == nx && ptr->pos.y == ny)
-                        {
+                    while (ptr != NULL) {
+                        if (ptr->pos.x == nx && ptr->pos.y == ny) {
                             if (countedNumbers[l])
                                 goto brklp;
                             countedNumbers[l] = true;
                             counting = true;
                         }
-                        if (counting)
-                        {
-                            char digitsToConvert[10] = {0};
+                        if (counting) {
+                            char digitsToConvert[10] = { 0 };
                             node_t *ptr2 = head;
-                            while (ptr2 != NULL)
-                            {
+                            while (ptr2 != NULL) {
                                 digitsToConvert[strlen(digitsToConvert)] = ptr2->c;
                                 ptr2 = ptr2->next;
                             }
@@ -200,8 +171,7 @@ int main(void)
                     }
                 brklp:;
                 }
-                if (count == 2 && tmpSoma != 1)
-                {
+                if (count == 2 && tmpSoma != 1) {
                     printf("Somando %zu a %zu\n", tmpSoma, soma);
                     soma += tmpSoma;
                     tmpSoma = 1;

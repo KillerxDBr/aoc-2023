@@ -1,19 +1,15 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdbool.h>
 #include <tgmath.h>
 
-int main(void)
-{
-    const char *numeros[] = {
-        "one", "two", "three", "four",
-        "five", "six", "seven", "eight", "nine",
-        "1", "2", "3", "4", "5", "6", "7", "8", "9"};
-    size_t numerosCount = sizeof(numeros) / sizeof(char *);
+int main(void) {
+    const char *numeros[]
+        = { "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+    size_t numerosCount = sizeof(numeros) / sizeof(numeros[0]);
     const char *input = "input.txt";
     FILE *fd = fopen(input, "rt");
-    if (fd == NULL)
-    {
+    if (fd == NULL) {
         fprintf(stderr, "Couldn't open file %s: ", input);
         perror(NULL);
         return 1;
@@ -22,18 +18,14 @@ int main(void)
     char line[256];
 
     size_t soma = 0, n1 = 0, n2 = 0;
-    while (fgets(line, 255, fd) != NULL)
-    {
+    while (fgets(line, 255, fd) != NULL) {
         line[strlen(line) - 1] = '\0';
         printf("%s -> (%p)\n", line, line);
         size_t minDist = -1, maxDist = -1;
-        for (size_t i = 0; i < numerosCount; i++)
-        {
+        for (size_t i = 0; i < numerosCount; i++) {
             char *tmp = strstr(line, numeros[i]);
-            if (tmp != NULL)
-            {
-                while (tmp != NULL)
-                {
+            if (tmp != NULL) {
+                while (tmp != NULL) {
                     if (minDist == -1)
                         minDist = tmp - line;
                     if (maxDist == -1)
@@ -48,20 +40,15 @@ int main(void)
         }
         n1 = 0;
         n2 = 0;
-        char final[6] = {0};
+        char final[6] = { 0 };
         strncpy(final, line + minDist, 6);
         final[5] = 0;
-        for (int i = 0; i < numerosCount; i++)
-        {
-            if (strncmp(final, numeros[i], strlen(numeros[i])) == 0)
-            {
-                if (i > 8)
-                {
+        for (int i = 0; i < numerosCount; i++) {
+            if (strncmp(final, numeros[i], strlen(numeros[i])) == 0) {
+                if (i > 8) {
                     n1 = (final[0] - '0') * 10;
                     break;
-                }
-                else
-                {
+                } else {
                     n1 = (i + 1) * 10;
                     break;
                 }
@@ -69,17 +56,12 @@ int main(void)
         }
         strncpy(final, line + maxDist, 6);
         final[5] = 0;
-        for (int i = 0; i < numerosCount; i++)
-        {
-            if (strncmp(final, numeros[i], strlen(numeros[i])) == 0)
-            {
-                if (i > 8)
-                {
+        for (int i = 0; i < numerosCount; i++) {
+            if (strncmp(final, numeros[i], strlen(numeros[i])) == 0) {
+                if (i > 8) {
                     n2 = final[0] - '0';
                     break;
-                }
-                else
-                {
+                } else {
                     n2 = i + 1;
                     break;
                 }

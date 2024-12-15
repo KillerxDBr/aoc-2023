@@ -1,28 +1,23 @@
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
-#include <ctype.h>
 
 #define BUF_SIZE 256
 
-int main(void)
-{
+int main(void) {
     const char *input = "input.txt";
     FILE *fd = fopen(input, "rt");
-    if (fd == NULL)
-    {
+    if (fd == NULL) {
         fprintf(stderr, "Couldn't open file %s: ", input);
         perror(NULL);
     }
-    size_t soma = 0;
     char line[256];
+    size_t soma = 0;
     size_t fdigit = 0;
     size_t ldigit = 0;
-    while (fgets(line, 255, fd) != NULL)
-    {
-        for (int i = 0; i < strlen(line); ++i)
-        {
-            if (isdigit(line[i]))
-            {
+    while (fgets(line, 255, fd) != NULL) {
+        for (int i = 0; i < strlen(line); ++i) {
+            if (isdigit(line[i])) {
                 if (fdigit == 0)
                     fdigit = line[i] - '0';
                 ldigit = line[i] - '0';

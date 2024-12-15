@@ -1,44 +1,38 @@
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 
-#define da_free(xs)             \
-    do                          \
-    {                           \
-        if ((xs)->count > 0)    \
-        {                       \
-            free((xs)->items);  \
-            (xs)->count = 0;    \
-            (xs)->capacity = 0; \
-        }                       \
+#define da_free(xs)                                                                                                                        \
+    do {                                                                                                                                   \
+        if ((xs)->count > 0) {                                                                                                             \
+            free((xs)->items);                                                                                                             \
+            (xs)->count = 0;                                                                                                               \
+            (xs)->capacity = 0;                                                                                                            \
+        }                                                                                                                                  \
     } while (0);
 
-#define da_free_ptr(xs)                           \
-    do                                            \
-    {                                             \
-        if ((xs)->count > 0)                      \
-        {                                         \
-            for (int i = 0; i < (xs)->count; i++) \
-                free((xs)->items[i]);             \
-            free((xs)->items);                    \
-            (xs)->count = 0;                      \
-            (xs)->capacity = 0;                   \
-        }                                         \
+#define da_free_ptr(xs)                                                                                                                    \
+    do {                                                                                                                                   \
+        if ((xs)->count > 0) {                                                                                                             \
+            for (int i = 0; i < (xs)->count; i++)                                                                                          \
+                free((xs)->items[i]);                                                                                                      \
+            free((xs)->items);                                                                                                             \
+            (xs)->count = 0;                                                                                                               \
+            (xs)->capacity = 0;                                                                                                            \
+        }                                                                                                                                  \
     } while (0);
 
-#define da_append(xs, x)                                                               \
-    do                                                                                 \
-    {                                                                                  \
-        if ((xs)->count >= (xs)->capacity)                                             \
-        {                                                                              \
-            if ((xs)->capacity == 0)                                                   \
-                (xs)->capacity = 256;                                                  \
-            else                                                                       \
-                (xs)->capacity *= 2;                                                   \
-            (xs)->items = realloc((xs)->items, (xs)->capacity * sizeof(*(xs)->items)); \
-        }                                                                              \
-        (xs)->items[(xs)->count++] = (x);                                              \
+#define da_append(xs, x)                                                                                                                   \
+    do {                                                                                                                                   \
+        if ((xs)->count >= (xs)->capacity) {                                                                                               \
+            if ((xs)->capacity == 0)                                                                                                       \
+                (xs)->capacity = 256;                                                                                                      \
+            else                                                                                                                           \
+                (xs)->capacity *= 2;                                                                                                       \
+            (xs)->items = realloc((xs)->items, (xs)->capacity * sizeof(*(xs)->items));                                                     \
+        }                                                                                                                                  \
+        (xs)->items[(xs)->count++] = (x);                                                                                                  \
     } while (0)
 
 /*
@@ -50,30 +44,28 @@ typedef struct
 } <name>;
 */
 
-typedef struct
-{
+typedef struct {
     size_t *items;
     size_t count;
     size_t capacity;
 } Numbers;
 
-typedef struct
-{
+typedef struct {
     char **items;
     size_t count;
     size_t capacity;
 } Strings;
 
 void updateNumbers(Strings *strings, Numbers *yourNumbers, Numbers *winningNumbers, size_t index);
-void updateStrings(Strings *strings, size_t ysize, size_t wsize, Numbers *yourNumbers, Numbers *winningNumbers, size_t index, Numbers *result);
+void updateStrings(Strings *strings, size_t ysize, size_t wsize, Numbers *yourNumbers, Numbers *winningNumbers, size_t index,
+                   Numbers *result);
 
 size_t originalSize;
 
 #define SMALL 0
 #define BUFFER_SIZE 256
 
-int main(void)
-{
+int main(void) {
     const char *separator = "===================";
 #if SMALL
     const char *input = "small.txt";
@@ -81,20 +73,18 @@ int main(void)
     const char *input = "input.txt";
 #endif
     FILE *fd = fopen(input, "rt");
-    if (fd == NULL)
-    {
+    if (fd == NULL) {
         fprintf(stderr, "Couldn't open file %s: ", input);
         perror(NULL);
         return 1;
     }
-    Strings strings = {0};
-    Numbers yourNumbers = {0};
-    Numbers winningNumbers = {0};
-    Numbers result = {0};
+    Strings strings = { 0 };
+    Numbers yourNumbers = { 0 };
+    Numbers winningNumbers = { 0 };
+    Numbers result = { 0 };
 
     char *tmp = malloc(BUFFER_SIZE);
-    while (fgets(tmp, BUFFER_SIZE - 1, fd) != NULL)
-    {
+    while (fgets(tmp, BUFFER_SIZE - 1, fd) != NULL) {
         char *endLine = strchr(tmp, '\n');
         if (endLine != NULL)
             endLine[0] = '\0';
@@ -111,8 +101,7 @@ int main(void)
     updateNumbers(&strings, &yourNumbers, &winningNumbers, index);
     size_t wsize = winningNumbers.count / originalSize, ysize = yourNumbers.count / originalSize;
 
-    do
-    {
+    do {
         tmpIndex = strings.count;
         updateStrings(&strings, ysize, wsize, &yourNumbers, &winningNumbers, index, &result);
         index = tmpIndex;
@@ -125,27 +114,22 @@ int main(void)
     da_free(&result);
     da_free_ptr(&strings);
     puts(separator);
-    printf("Resultado: %zu\n",rst);
+    printf("Resultado: %zu\n", rst);
     return 0;
 }
 
-void updateNumbers(
-    Strings *strings, Numbers *yourNumbers,
-    Numbers *winningNumbers, size_t index)
-{
+void updateNumbers(Strings *strings, Numbers *yourNumbers, Numbers *winningNumbers, size_t index) {
     size_t n;
     char *str = NULL;
     char *sep = NULL;
 
-    for (size_t i = index; i < strings->count; i++)
-    {
+    for (size_t i = index; i < strings->count; i++) {
 
         str = strchr(strings->items[i], ':');
         sep = strchr(strings->items[i], '|');
         str++;
 
-        while (str < sep - 1 && str != NULL)
-        {
+        while (str < sep - 1 && str != NULL) {
             sscanf(str, "%zu", &n);
             str++;
             str++;
@@ -154,8 +138,7 @@ void updateNumbers(
         }
         sep++;
 
-        while (sep != NULL && sep < sep + strlen(strings->items[i]))
-        {
+        while (sep != NULL && sep < sep + strlen(strings->items[i])) {
             sscanf(sep, "%zu", &n);
             sep++;
             sep++;
@@ -165,18 +148,15 @@ void updateNumbers(
     }
 }
 
-void updateStrings(Strings *strings, size_t ysize, size_t wsize, Numbers *yourNumbers, Numbers *winningNumbers, size_t index, Numbers *result)
-{
+void updateStrings(Strings *strings, size_t ysize, size_t wsize, Numbers *yourNumbers, Numbers *winningNumbers, size_t index,
+                   Numbers *result) {
     size_t wn, yn;
     size_t n = 0;
 
-    for (size_t i = index; i < strings->count; i++)
-    {
-        for (size_t j = 0; j < wsize; j++)
-        {
+    for (size_t i = index; i < strings->count; i++) {
+        for (size_t j = 0; j < wsize; j++) {
             wn = winningNumbers->items[j + i * wsize];
-            for (size_t l = 0; l < ysize; l++)
-            {
+            for (size_t l = 0; l < ysize; l++) {
                 yn = yourNumbers->items[l + ysize * i];
                 if (yn == wn)
                     n++;
@@ -188,17 +168,13 @@ void updateStrings(Strings *strings, size_t ysize, size_t wsize, Numbers *yourNu
 
     char *dupString;
 
-    for (size_t i = index; i < result->count; i++)
-    {
+    for (size_t i = index; i < result->count; i++) {
         if (result->items[i] == 0)
             continue;
-        for (size_t j = 1; j <= result->items[i]; j++)
-        {
+        for (size_t j = 1; j <= result->items[i]; j++) {
             size_t strToDup = originalSize + 1;
-            for (size_t k = 0; k < originalSize; k++)
-            {
-                if (strcmp(strings->items[i], strings->items[k]) == 0)
-                {
+            for (size_t k = 0; k < originalSize; k++) {
+                if (strcmp(strings->items[i], strings->items[k]) == 0) {
                     strToDup = k;
                     break;
                 }

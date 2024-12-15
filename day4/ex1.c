@@ -2,42 +2,36 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define da_free(xs)             \
-    do                          \
-    {                           \
-        if ((xs)->count > 0)    \
-        {                       \
-            free((xs)->items);  \
-            (xs)->count = 0;    \
-            (xs)->capacity = 0; \
-        }                       \
+#define da_free(xs)                                                                                                                        \
+    do {                                                                                                                                   \
+        if ((xs)->count > 0) {                                                                                                             \
+            free((xs)->items);                                                                                                             \
+            (xs)->count = 0;                                                                                                               \
+            (xs)->capacity = 0;                                                                                                            \
+        }                                                                                                                                  \
     } while (0);
 
-#define da_free_ptr(xs)                           \
-    do                                            \
-    {                                             \
-        if ((xs)->count > 0)                      \
-        {                                         \
-            for (int i = 0; i < (xs)->count; i++) \
-                free((xs)->items[i]);             \
-            free((xs)->items);                    \
-            (xs)->count = 0;                      \
-            (xs)->capacity = 0;                   \
-        }                                         \
+#define da_free_ptr(xs)                                                                                                                    \
+    do {                                                                                                                                   \
+        if ((xs)->count > 0) {                                                                                                             \
+            for (int i = 0; i < (xs)->count; i++)                                                                                          \
+                free((xs)->items[i]);                                                                                                      \
+            free((xs)->items);                                                                                                             \
+            (xs)->count = 0;                                                                                                               \
+            (xs)->capacity = 0;                                                                                                            \
+        }                                                                                                                                  \
     } while (0);
 
-#define da_append(xs, x)                                                               \
-    do                                                                                 \
-    {                                                                                  \
-        if ((xs)->count >= (xs)->capacity)                                             \
-        {                                                                              \
-            if ((xs)->capacity == 0)                                                   \
-                (xs)->capacity = 256;                                                  \
-            else                                                                       \
-                (xs)->capacity *= 2;                                                   \
-            (xs)->items = realloc((xs)->items, (xs)->capacity * sizeof(*(xs)->items)); \
-        }                                                                              \
-        (xs)->items[(xs)->count++] = (x);                                              \
+#define da_append(xs, x)                                                                                                                   \
+    do {                                                                                                                                   \
+        if ((xs)->count >= (xs)->capacity) {                                                                                               \
+            if ((xs)->capacity == 0)                                                                                                       \
+                (xs)->capacity = 256;                                                                                                      \
+            else                                                                                                                           \
+                (xs)->capacity *= 2;                                                                                                       \
+            (xs)->items = realloc((xs)->items, (xs)->capacity * sizeof(*(xs)->items));                                                     \
+        }                                                                                                                                  \
+        (xs)->items[(xs)->count++] = (x);                                                                                                  \
     } while (0)
 
 /*
@@ -49,15 +43,13 @@ typedef struct
 } <name>;
 */
 
-typedef struct
-{
+typedef struct {
     size_t *items;
     size_t count;
     size_t capacity;
 } Numbers;
 
-typedef struct
-{
+typedef struct {
     char **items;
     size_t count;
     size_t capacity;
@@ -70,28 +62,25 @@ typedef struct
 #define LINE_SIZE 116
 #endif
 
-int main(void)
-{
+int main(void) {
 #if SMALL
     const char *input = "small.txt";
 #else
     const char *input = "input.txt";
 #endif
     FILE *fd = fopen(input, "rt");
-    if (fd == NULL)
-    {
+    if (fd == NULL) {
         fprintf(stderr, "Couldn't open file %s: ", input);
         perror(NULL);
         return 1;
     }
-    Strings strings = {0};
-    Numbers yourNumbers = {0};
-    Numbers winningNumbers = {0};
-    Numbers result = {0};
+    Strings strings = { 0 };
+    Numbers yourNumbers = { 0 };
+    Numbers winningNumbers = { 0 };
+    Numbers result = { 0 };
 
     char *tmp = malloc(256);
-    while (fgets(tmp, 255, fd) != NULL)
-    {
+    while (fgets(tmp, 255, fd) != NULL) {
         tmp[LINE_SIZE] = 0;
         tmp = realloc(tmp, strlen(tmp) + 1);
         da_append(&strings, tmp);
@@ -102,8 +91,7 @@ int main(void)
 
     char *sep = NULL;
     size_t n, wsize, ysize;
-    for (size_t i = 0; i < strings.count; i++)
-    {
+    for (size_t i = 0; i < strings.count; i++) {
         wsize = 0;
         ysize = 0;
 
@@ -111,8 +99,7 @@ int main(void)
         sep = strchr(strings.items[i], '|');
         tmp++;
 
-        while (tmp < sep - 1 && tmp != NULL)
-        {
+        while (tmp < sep - 1 && tmp != NULL) {
             sscanf(tmp, "%zu", &n);
             tmp++;
             tmp++;
@@ -121,8 +108,7 @@ int main(void)
             ysize++;
         }
         sep++;
-        while (sep != NULL && sep < sep + strlen(strings.items[i]))
-        {
+        while (sep != NULL && sep < sep + strlen(strings.items[i])) {
             sscanf(sep, "%zu", &n);
             sep++;
             sep++;
@@ -139,17 +125,14 @@ int main(void)
     size_t wn, yn;
 
     puts("===================");
-    for (size_t i = 0; i < winningNumbers.count / wsize; i++)
-    {
-        for (size_t j = 0; j < wsize; j++)
-        {
+    for (size_t i = 0; i < winningNumbers.count / wsize; i++) {
+        for (size_t j = 0; j < wsize; j++) {
             // if (i > j && j + i * wsize % wsize == 0)
             //     printf("\n");
             // printf("%02d ", winningNumbers.items[j + i * wsize]);
             wn = winningNumbers.items[j + i * wsize];
 
-            for (size_t l = 0; l < ysize; l++)
-            {
+            for (size_t l = 0; l < ysize; l++) {
                 yn = yourNumbers.items[l + ysize * i];
                 if (yn != wn)
                     continue;
@@ -164,8 +147,7 @@ int main(void)
         tmpSoma = 0;
     }
     // puts("\n===================");
-    for (size_t i = 0; i < result.count; i++)
-    {
+    for (size_t i = 0; i < result.count; i++) {
         soma += result.items[i];
         printf("Jogo %zu: %zu\n", i + 1, result.items[i]);
     }
