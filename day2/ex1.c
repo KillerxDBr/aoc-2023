@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,8 +23,7 @@ int main(void) {
     const char *input = "input.txt";
     FILE *fd = fopen(input, "rt");
     if (fd == NULL) {
-        fprintf(stderr, "Couldn't open file %s: ", input);
-        perror(NULL);
+        fprintf(stderr, "[ERROR] Couldn't open file '%s': %s\n", input, strerror(errno));
         return 1;
     }
 

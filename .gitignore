@@ -79,3 +79,8 @@ dkms.conf
 output.txt
 .gdb_history
 *.exe.old
+*.log
+nob
+nob.old
+nob.exe
+nob.exe.old

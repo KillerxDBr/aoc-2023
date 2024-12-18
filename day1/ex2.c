@@ -1,7 +1,8 @@
+#include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <tgmath.h>
 
 int main(void) {
     const char *numeros[]
@@ -10,8 +11,7 @@ int main(void) {
     const char *input = "input.txt";
     FILE *fd = fopen(input, "rt");
     if (fd == NULL) {
-        fprintf(stderr, "Couldn't open file %s: ", input);
-        perror(NULL);
+        fprintf(stderr, "[ERROR] Couldn't open file '%s': %s\n", input, strerror(errno));
         return 1;
     }
 
@@ -30,8 +30,8 @@ int main(void) {
                         minDist = tmp - line;
                     if (maxDist == -1)
                         maxDist = tmp - line;
-                    maxDist = fmax(maxDist, tmp - line);
-                    minDist = fmin(minDist, tmp - line);
+                    maxDist = __max(maxDist, tmp - line);
+                    minDist = __min(minDist, tmp - line);
                     printf("minDist: %zu\nmaxDist: %zu\n", minDist, maxDist);
                     tmp++;
                     tmp = strstr(tmp, numeros[i]);

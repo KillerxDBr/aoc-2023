@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -8,15 +9,16 @@ int main(void) {
     const char *input = "input.txt";
     FILE *fd = fopen(input, "rt");
     if (fd == NULL) {
-        fprintf(stderr, "Couldn't open file %s: ", input);
-        perror(NULL);
+        fprintf(stderr, "[ERROR] Couldn't open file '%s': %s\n", input, strerror(errno));
+        return 1;
     }
+
     char line[256];
     size_t soma = 0;
     size_t fdigit = 0;
     size_t ldigit = 0;
     while (fgets(line, 255, fd) != NULL) {
-        for (int i = 0; i < strlen(line); ++i) {
+        for (size_t i = 0; i < strlen(line); ++i) {
             if (isdigit(line[i])) {
                 if (fdigit == 0)
                     fdigit = line[i] - '0';

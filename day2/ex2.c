@@ -1,18 +1,16 @@
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define CUBE_QTD 100
 
 int main(void) {
     const char *input = "input.txt";
     FILE *fd = fopen(input, "rt");
     if (fd == NULL) {
-        fprintf(stderr, "Couldn't open file %s: ", input);
-        perror(NULL);
+        fprintf(stderr, "[ERROR] Couldn't open file '%s': %s\n", input, strerror(errno));
         return 1;
     }
-    // size_t power[CUBE_QTD] = {0};
+
     size_t soma = 0;
     char line[256];
     int r, g, b;
