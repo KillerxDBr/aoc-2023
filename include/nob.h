@@ -1077,6 +1077,7 @@ void nob_log(Nob_Log_Level level, const char *fmt, ...)
     vfprintf(stderr, fmt, args);
     va_end(args);
     fprintf(stderr, "\n");
+    fflush(stderr);
 }
 
 bool nob_read_entire_dir(const char *parent, Nob_File_Paths *children)
