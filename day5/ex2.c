@@ -18,19 +18,23 @@ typedef struct {
 } Range;
 
 typedef struct {
-    size_t seed;
-    size_t soil;
-    size_t fert;
-    size_t water;
-    size_t light;
-    size_t temp;
-    size_t humid;
-    size_t loc;
-} Mapping;
+    size_t start, range;
+} Seed;
+
+// typedef struct {
+//     size_t seed;
+//     size_t soil;
+//     size_t fert;
+//     size_t water;
+//     size_t light;
+//     size_t temp;
+//     size_t humid;
+//     size_t loc;
+// } Mapping;
 
 da_array(Ranges, Range);
-da_array(Seeds, size_t);
-da_array(Mappings, Mapping);
+da_array(Seeds, Seed);
+// da_array(Mappings, Mapping);
 
 void parseSeeds(Nob_String_View sv, Seeds *seeds);
 size_t parseRange(Strings *strings, Ranges *arrRange, size_t index);
@@ -114,7 +118,7 @@ int main(void) {
     Ranges HumidRange = { 0 };
     Ranges LocRange   = { 0 };
     // clang-format on
-    Mappings mappings = { 0 };
+    // Mappings mappings = { 0 };
 
     int mode = 0;
 
@@ -206,7 +210,7 @@ int main(void) {
     // clang-format on
     printf("-----------------------------\n");
     for (size_t i = 0; i < seeds.count; ++i)
-        printf("Seed       %02zu: \"" ST_FMT "\"\n", i + 1, seeds.items[i]);
+        printf("Seed       %02zu: \"" ST_FMT " -> "ST_FMT"\"\n", i + 1, seeds.items[i].start, seeds.items[i].start+seeds.items[i].range-1);
     printf("-----------------------------\n");
     for (size_t i = 0; i < SoilRange.count; ++i)
         printf("SoilRange  %02zu: \"" ST_FMT " " ST_FMT " " ST_FMT "\"\n", i + 1, SoilRange.items[i].dest, SoilRange.items[i].src,
@@ -238,36 +242,42 @@ int main(void) {
 
     fflush(stdout);
 
-    for (size_t i = 0; i < seeds.count; ++i) {
-        Mapping m = { 0 };
-        m.seed = seeds.items[i];
-        // clang-format off
-        m.soil  = checkRange(m.seed,  &SoilRange);
-        m.fert  = checkRange(m.soil,  &FertRange);
-        m.water = checkRange(m.fert,  &WaterRange);
-        m.light = checkRange(m.water, &LightRange);
-        m.temp  = checkRange(m.light, &TempRange);
-        m.humid = checkRange(m.temp,  &HumidRange);
-        m.loc   = checkRange(m.humid, &LocRange);
-        // clang-format on
-        nob_da_append(&mappings, m);
-    }
-
+    size_t n;
     size_t lowestLocation = (size_t)-1;
 
-    assert(mappings.count > 0);
+    for (size_t i = 0; i < seeds.count; ++i) {
+        n = 0;
+        for (size_t j = 0; j < seeds.items[i].range; ++j) {
 
-    printf("-----------------------------\n");
-    for (size_t i = 0; i < mappings.count; ++i) {
-        Mapping m = mappings.items[i];
-        // clang-format off
-        printf("Seed %02zu: "ST_FMT", Soil: "ST_FMT", Fertilizer: "ST_FMT", Water: "ST_FMT", Light: "ST_FMT", Temperature: "ST_FMT", Humidity: "ST_FMT", Location: "ST_FMT"\n",
-                     i+1,    m.seed,         m.soil,         m.fert,               m.water,         m.light,         m.temp,                m.humid,            m.loc);
-        // clang-format on
-        lowestLocation = __min(lowestLocation, m.loc);
+            n = seeds.items[i].start + j;
+            // clang-format off
+            n = checkRange(n, &SoilRange);
+            n = checkRange(n, &FertRange);
+            n = checkRange(n, &WaterRange);
+            n = checkRange(n, &LightRange);
+            n = checkRange(n, &TempRange);
+            n = checkRange(n, &HumidRange);
+            n = checkRange(n, &LocRange);
+            // clang-format on
+            // nob_da_append(&mappings, m);
+            lowestLocation = __min(lowestLocation, n);
+        }
     }
 
-    fflush(stdout);
+
+    // assert(mappings.count > 0);
+
+    // printf("-----------------------------\n");
+    // for (size_t i = 0; i < mappings.count; ++i) {
+    //     Mapping m = mappings.items[i];
+    //     // clang-format off
+    //     printf("Seed %02zu: "ST_FMT", Soil: "ST_FMT", Fertilizer: "ST_FMT", Water: "ST_FMT", Light: "ST_FMT", Temperature: "ST_FMT", Humidity: "ST_FMT", Location: "ST_FMT"\n",
+    //                  i+1,    m.seed,         m.soil,         m.fert,               m.water,         m.light,         m.temp,                m.humid,            m.loc);
+    //     // clang-format on
+    //     lowestLocation = __min(lowestLocation, m.loc);
+    // }
+
+    // fflush(stdout);
 
 defer:
     da_free_ptr(&strings);
@@ -281,7 +291,7 @@ defer:
     da_free(&HumidRange);
     da_free(&LocRange);
 
-    da_free(&mappings);
+    // da_free(&mappings);
 
     nob_sb_free(sb);
 
@@ -318,14 +328,18 @@ void parseRange2(Nob_String_View sv, Ranges *arrRange) {
 void parseSeeds(Nob_String_View sv, Seeds *seeds) {
     nob_sv_chop_by_delim(&sv, ' ');
     while (sv.count > 0) {
-        nob_da_append(seeds, sv_to_u64(nob_sv_chop_by_delim(&sv, ' ')));
+        Seed s = {
+            .start = sv_to_u64(nob_sv_chop_by_delim(&sv, ' ')),
+            .range = sv_to_u64(nob_sv_chop_by_delim(&sv, ' ')),
+        };
+        nob_da_append(seeds, s);
     }
 }
 
 size_t checkRange(size_t n, Ranges *ranges) {
     for (size_t i = 0; i < ranges->count; ++i) {
         Range r = ranges->items[i];
-        if (n >= r.src && n <= (r.src + r.len - 1)) {
+        if ((n >= r.src) && (n <= (r.src + r.len - 1))) {
             return n - r.src + r.dest;
         }
     }
