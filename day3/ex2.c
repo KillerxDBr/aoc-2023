@@ -43,9 +43,9 @@ typedef struct {
 #endif
 int main(void) {
 #if SMALL
-    const char *input = "small.txt";
+    const char *input = "day3/small.txt";
 #else
-    const char *input = "input.txt";
+    const char *input = "day3/input.txt";
 #endif
     FILE *fd = fopen(input, "rt");
     if (fd == NULL) {

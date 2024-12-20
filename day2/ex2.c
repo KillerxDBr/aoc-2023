@@ -4,7 +4,7 @@
 #include <string.h>
 
 int main(void) {
-    const char *input = "input.txt";
+    const char *input = "day2/input.txt";
     FILE *fd = fopen(input, "rt");
     if (fd == NULL) {
         fprintf(stderr, "[ERROR] Couldn't open file '%s': %s\n", input, strerror(errno));

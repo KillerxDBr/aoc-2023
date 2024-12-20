@@ -8,7 +8,7 @@ int main(void) {
     const char *numeros[]
         = { "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
     size_t numerosCount = sizeof(numeros) / sizeof(numeros[0]);
-    const char *input = "input.txt";
+    const char *input = "day1/input.txt";
     FILE *fd = fopen(input, "rt");
     if (fd == NULL) {
         fprintf(stderr, "[ERROR] Couldn't open file '%s': %s\n", input, strerror(errno));

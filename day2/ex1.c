@@ -20,7 +20,7 @@ size_t getPlays(const char *line);
 void calcCubes(cubes_t *cubes, const char *line);
 
 int main(void) {
-    const char *input = "input.txt";
+    const char *input = "day2/input.txt";
     FILE *fd = fopen(input, "rt");
     if (fd == NULL) {
         fprintf(stderr, "[ERROR] Couldn't open file '%s': %s\n", input, strerror(errno));
