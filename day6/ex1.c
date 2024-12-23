@@ -16,7 +16,7 @@ typedef struct {
     size_t count, capacity;
 } intArr;
 
-#define SMALL
+// #define SMALL
 int main(void) {
 #ifdef SMALL
     const char *input = "day6/small.txt";
@@ -51,8 +51,10 @@ int main(void) {
     printf("tLine: '" SV_Fmt "'\n", SV_Arg(tLine));
     printf("dLine: '" SV_Fmt "'\n", SV_Arg(dLine));
 
-    intArr ta = { 0 };
-    intArr da = { 0 };
+    intArr ta  = { 0 };
+    intArr da  = { 0 };
+    intArr rst = { 0 };
+    size_t finalResult = 1;
 
     int n;
     while (tLine.count > 0) {
@@ -70,8 +72,34 @@ int main(void) {
     }
     printf("------------------------------------\n");
 
-    assert(ta.count == da.count);
+    if(ta.count != da.count){
+        nob_log(NOB_ERROR, "Time count:     %zu", ta.count);
+        nob_log(NOB_ERROR, "Distance count: %zu", da.count);
+        nob_return_defer(1);
+    }
 
+    for(size_t i = 0; i < da.count; ++i) {
+        rst.count = 0;
+        int t = ta.items[i];
+        int d = da.items[i];
+
+        // printf("Time: %d\n",t);
+        for(int vel = 1; vel < ta.items[i]; ++vel) {
+            int dt = vel * (t-vel);
+            // printf("vel: %d\n", vel);
+            // printf("result: %d\n", dt);
+            if(dt > d){
+                nob_da_append(&rst, dt);
+            }
+        }
+        printf("Corrida[%zu]: %zu\n", i+1, rst.count);
+        finalResult *= rst.count;
+        // printf("-----------------\n");
+    }   
+
+    printf("Resultado final: %zu\n", finalResult);
+
+#if 0
     printf("Time:    ");
     for (size_t i = 0; i < ta.count; ++i)
         printf(" %d ", ta.items[i]);
@@ -81,9 +109,12 @@ int main(void) {
     for (size_t i = 0; i < da.count; ++i)
         printf(" %d ", da.items[i]);
     printf("\n");
+#endif
 
 defer:
-
+    nob_da_free(ta);
+    nob_da_free(da);
+    nob_da_free(rst);
     nob_sb_free(sb);
     return result;
 }

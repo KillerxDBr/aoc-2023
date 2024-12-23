@@ -33,17 +33,15 @@ int main(int argc, char **argv) {
 bool buildExes(void) {
     bool result = true;
 
-    Nob_Procs procs = { 0 };
     Nob_Cmd cmd = { 0 };
-    nob_cmd_append(&cmd, "gcc", "-Wall", "-Wextra", "-Og");
-#ifndef _WIN32
-    nob_cmd_append(&cmd, "-g", "-fsanitize=address", "-lm");
-#endif // _WIN32
+    nob_cmd_append(&cmd, "gcc", "-Wall", "-Wextra", "-Og", "-g3", "-ggdb3", "-lm");
     const size_t cmdBkp = cmd.count;
 
-    for (size_t day = 0; true; day++) {
+    bool continueComp = true;
+
+    for (size_t day = 0; continueComp; day++) {
         const size_t exCP = nob_temp_save();
-        for (size_t exN = 0; true; exN++) {
+        for (size_t exN = 0; continueComp; exN++) {
             cmd.count = cmdBkp;
             const char *srcPath = nob_temp_sprintf("day%zu/ex%zu.c", day + 1, exN + 1);
 
@@ -55,7 +53,7 @@ bool buildExes(void) {
             if (nob_needs_rebuild1(exePath, srcPath) != 0) {
                 nob_cmd_append(&cmd, "-o", exePath, srcPath);
 
-                nob_da_append(&procs, nob_cmd_run_async(cmd));
+                continueComp = continueComp & nob_cmd_run_sync(cmd);
             }
         }
         nob_temp_rewind(exCP);
@@ -63,11 +61,10 @@ bool buildExes(void) {
             break;
     }
 
-    if (!nob_procs_wait(procs))
+    if (!continueComp)
         nob_return_defer(false);
 
 defer:
-    nob_da_free(procs);
     nob_cmd_free(cmd);
     return result;
 }
