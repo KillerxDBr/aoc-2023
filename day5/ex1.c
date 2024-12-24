@@ -3,6 +3,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef __max
+#define __max(a,b) (((a) > (b)) ? (a) : (b))
+#define __min(a,b) (((a) < (b)) ? (a) : (b))
+#endif
+
 #include "../include/da.h"
 
 #define NOB_IMPLEMENTATION

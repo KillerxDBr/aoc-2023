@@ -314,6 +314,13 @@ bool nob_read_entire_file(const char *path, Nob_String_Builder *sb);
 // Free the memory allocated by a string builder
 #define nob_sb_free(sb) NOB_FREE((sb).items)
 
+#ifndef SB_Fmt
+#define SB_Fmt "%.*s"
+#endif // SB_Fmt
+#ifndef SB_Arg
+#define SB_Arg(sb) (int) (sb).count, (sb).items
+#endif // SB_Arg
+
 // Process handle
 #ifdef _WIN32
 typedef HANDLE Nob_Proc;

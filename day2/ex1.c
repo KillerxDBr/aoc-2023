@@ -10,6 +10,11 @@
 
 #define CUBE_QTD 100
 
+#ifndef __max
+#define __max(a,b) (((a) > (b)) ? (a) : (b))
+#define __min(a,b) (((a) < (b)) ? (a) : (b))
+#endif
+
 typedef struct cubes_s {
     size_t id, plays;
     bool notValid;

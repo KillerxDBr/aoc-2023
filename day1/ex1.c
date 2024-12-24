@@ -3,6 +3,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifndef __max
+#define __max(a,b) (((a) > (b)) ? (a) : (b))
+#define __min(a,b) (((a) < (b)) ? (a) : (b))
+#endif
+
 #define BUF_SIZE 256
 
 int main(void) {

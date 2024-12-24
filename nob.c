@@ -4,6 +4,12 @@
 bool buildExes(void);
 bool clearExes(void);
 
+#ifdef _WIN32
+#define WIN32_EXE ".exe"
+#else
+#define WIN32_EXE ""
+#endif // _WIN32
+
 int main(int argc, char **argv) {
     NOB_GO_REBUILD_URSELF(argc, argv);
 
@@ -35,6 +41,9 @@ bool buildExes(void) {
 
     Nob_Cmd cmd = { 0 };
     nob_cmd_append(&cmd, "gcc", "-Wall", "-Wextra", "-Og", "-g3", "-ggdb3", "-lm");
+#ifndef _WIN32
+    nob_cmd_append(&cmd, "-fsanitize=address");
+#endif // !_WIN32
     const size_t cmdBkp = cmd.count;
 
     bool continueComp = true;
@@ -48,7 +57,7 @@ bool buildExes(void) {
             if (nob_file_exists(srcPath) < 1)
                 break;
 
-            const char *exePath = nob_temp_sprintf("day%zu/ex%zu.exe", day + 1, exN + 1);
+            const char *exePath = nob_temp_sprintf("day%zu/ex%zu" WIN32_EXE, day + 1, exN + 1);
 
             if (nob_needs_rebuild1(exePath, srcPath) != 0) {
                 nob_cmd_append(&cmd, "-o", exePath, srcPath);
@@ -125,32 +134,38 @@ void recurse_dir(Nob_String_Builder *sb, EmbedFiles *eb) {
 
 bool clearExes(void) {
     Nob_String_Builder sb = { 0 };
-    EmbedFiles eb = { 0 };
-
     for (size_t day = 0; true; day++) {
-        const char *df = nob_temp_sprintf("day%zu/", day + 1);
-        // nob_log(NOB_INFO, "Testing '%s' directory", df);
-        if (nob_file_exists(df) < 1)
-            break;
+        const size_t exCP = nob_temp_save();
+        for (size_t exN = 0; exN < 2; exN++) {
+            sb.count = 0;
+            const char *exePath = nob_temp_sprintf("day%zu/ex%zu", day + 1, exN + 1);
+            nob_sb_append_cstr(&sb, exePath);
+            Nob_String_Builder sb2 = sb;
+            nob_sb_append_cstr(&sb, ".exe");
 
-        sb.count = 0;
-        nob_sb_append_cstr(&sb, df);
-        recurse_dir(&sb, &eb);
-    }
+            nob_sb_append_null(&sb);
+            if (nob_file_exists(sb.items) == 1) {
+                nob_log(NOB_INFO, "Deleting '%s'", sb.items);
+                if (remove(sb.items) != 0)
+                    nob_log(NOB_ERROR, "Could not remove file '%s': %s", sb.items, strerror(errno));
+            }
 
-    for (size_t i = 0; i < eb.count; i++) {
-        if (nob_sv_end_with(nob_sv_from_cstr(eb.items[i]), ".exe")) {
-            nob_log(NOB_INFO, "Deleting '%s'", eb.items[i]);
-            if (remove(eb.items[i]) != 0)
-                nob_log(NOB_ERROR, "Could not remove file '%s': ", eb.items[i], strerror(errno));
+            nob_sb_append_null(&sb2);
+            if (nob_file_exists(sb2.items) == 1) {
+                nob_log(NOB_INFO, "Deleting '%s'", sb2.items);
+                if (remove(sb2.items) != 0)
+                    nob_log(NOB_ERROR, "Could not remove file '%s': %s", sb2.items, strerror(errno));
+            }
+
+            // printf("sb:  '"SB_Fmt"'\n", SB_Arg(sb));
+            // printf("sb2: '"SB_Fmt"'\n", SB_Arg(sb2));
+            // printf("sb:  0x%p\n", sb.items);
+            // printf("sb2: 0x%p\n", sb2.items);
         }
+        nob_temp_rewind(exCP);
+        if (nob_file_exists(nob_temp_sprintf("day%zu/", day + 1)) < 1)
+            break;
     }
-
-    for (size_t i = 0; i < eb.count; i++)
-        NOB_FREE(eb.items[i]);
-
-    NOB_FREE(eb.items);
-
     nob_sb_free(sb);
 
     return true;

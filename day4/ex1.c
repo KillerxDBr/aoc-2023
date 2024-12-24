@@ -91,6 +91,8 @@ int main(void) {
         printf("%s\n", strings.items[i]);
     }
 
+    da_free_ptr(&strings);
+
     size_t soma = 0, tmpSoma = 0;
     size_t wn, yn;
 
@@ -121,6 +123,11 @@ int main(void) {
         soma += result.items[i];
         printf("Jogo %zu: %zu\n", i + 1, result.items[i]);
     }
+
+    da_free(&yourNumbers);
+    da_free(&winningNumbers);
+    da_free(&result);
+
     printf("Resultado final: %zu\n", soma);
 
     return 0;

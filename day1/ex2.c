@@ -4,6 +4,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef __max
+#define __max(a,b) (((a) > (b)) ? (a) : (b))
+#define __min(a,b) (((a) < (b)) ? (a) : (b))
+#endif
+
 int main(void) {
     const char *numeros[]
         = { "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "1", "2", "3", "4", "5", "6", "7", "8", "9" };

@@ -3,6 +3,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef __max
+#define __max(a,b) (((a) > (b)) ? (a) : (b))
+#define __min(a,b) (((a) < (b)) ? (a) : (b))
+#endif
+
 int main(void) {
     const char *input = "day2/input.txt";
     FILE *fd = fopen(input, "rt");
@@ -36,6 +41,6 @@ int main(void) {
         }
         soma += (r * g * b);
     }
-    printf("%zu", soma);
+    printf("Resultado: %zu\n", soma);
     return 0;
 }
