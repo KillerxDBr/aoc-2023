@@ -11,7 +11,7 @@ bool clearExes(void);
 #endif // _WIN32
 
 int main(int argc, char **argv) {
-    NOB_GO_REBUILD_URSELF(argc, argv);
+    NOB_GO_REBUILD_URSELF_PLUS(argc, argv, "include/nob.h");
 
     const char *command;
     const char *program = nob_shift(argv, argc);
@@ -40,6 +40,19 @@ bool buildExes(void) {
     bool result = true;
 
     Nob_Cmd cmd = { 0 };
+
+    if(nob_needs_rebuild("libwinsane.o", (const char*[]){"winsane.c", "manifest.rc", "utf8.xml"}, 3) > 0) {
+        nob_cmd_append(&cmd, "gcc", "-c", "winsane.c");
+        if(!nob_cmd_run_sync_and_reset(&cmd)) nob_return_defer(false);
+
+        nob_cmd_append(&cmd, "windres", "-o", "manifest.o", "manifest.rc");
+        if(!nob_cmd_run_sync_and_reset(&cmd)) nob_return_defer(false);
+
+        nob_cmd_append(&cmd, "ld.exe", "-relocatable", "-o", "libwinsane.o", "winsane.o", "manifest.o");
+        if(!nob_cmd_run_sync_and_reset(&cmd)) nob_return_defer(false);
+
+    }
+
     nob_cmd_append(&cmd, "gcc", "-Wall", "-Wextra", "-Og", "-g3", "-ggdb3", "-lm");
 #ifndef _WIN32
     nob_cmd_append(&cmd, "-fsanitize=address");
@@ -59,8 +72,8 @@ bool buildExes(void) {
 
             const char *exePath = nob_temp_sprintf("day%zu/ex%zu" WIN32_EXE, day + 1, exN + 1);
 
-            if (nob_needs_rebuild1(exePath, srcPath) != 0) {
-                nob_cmd_append(&cmd, "-o", exePath, srcPath);
+            if (nob_needs_rebuild(exePath, (const char*[]){srcPath, "libwinsane.o"}, 2) != 0) {
+                nob_cmd_append(&cmd, "-o", exePath, srcPath, "libwinsane.o");
 
                 continueComp = continueComp & nob_cmd_run_sync(cmd);
             }
