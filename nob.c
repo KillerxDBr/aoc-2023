@@ -53,12 +53,12 @@ int main(int argc, char **argv) {
             nob_log(NOB_INFO, "Running Executables...");
             return !runExes();
         }
+        for (size_t i = 0; i < fp.count; ++i) {
+            free((void *)fp.items[i]);
+        }
+        nob_da_free(fp);
+        return 0;
     }
-
-    for (size_t i = 0; i < fp.count; ++i) {
-        free((void *)fp.items[i]);
-    }
-    nob_da_free(fp);
 
     Nob_String_Builder sb = { 0 };
     Nob_String_View sv;
@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
         nob_sb_append_cstr(&sb, " ");
     }
     sv = nob_sv_trim(nob_sb_to_sv(sb));
-    if(sv.count)
+    if (sv.count)
         nob_log(NOB_ERROR, "Unknown command: '" SV_Fmt "'", SV_Arg(sv));
     nob_sb_free(sb);
 
