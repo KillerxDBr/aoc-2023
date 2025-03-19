@@ -1,9 +1,6 @@
 #define NOB_IMPLEMENTATION
 #include "../include/nob.h"
 
-#define SV_IMPLEMENTATION
-#include "../include/sv.h"
-
 typedef Nob_File_Paths Strings;
 
 const char *labels[] = {
@@ -19,11 +16,16 @@ typedef struct {
 uint64_t kxd_sv_chop_u64(Nob_String_View *sv);
 
 // #define SMALL
-int main(void) {
+int main(int argc, char **argv) {
+    const char *program = nob_shift(argv, argc);
+
+    if (!nob_set_current_dir(nob_temp_sprintf(SV_Fmt, (int)(nob_path_name(program) - program), program))) {
+        return 1;
+    }
 #ifdef SMALL
-    const char *input = "day6/small.txt";
+    const char *input = "small.txt";
 #else
-    const char *input = "day6/input.txt";
+    const char *input = "input.txt";
 #endif
     int result = 0;
     Nob_String_Builder sb = { 0 };
@@ -37,8 +39,8 @@ int main(void) {
     Nob_String_View tLine = nob_sv_trim(nob_sv_chop_by_delim(&sv, '\n'));
     Nob_String_View dLine = nob_sv_trim(sv);
 
-    sv_chop_by_sv(&tLine, nob_sv_from_cstr(labels[0]));
-    sv_chop_by_sv(&dLine, nob_sv_from_cstr(labels[1]));
+    nob_sv_chop_by_sv(&tLine, nob_sv_from_cstr(labels[0]));
+    nob_sv_chop_by_sv(&dLine, nob_sv_from_cstr(labels[1]));
 
     tLine = nob_sv_trim(tLine);
     dLine = nob_sv_trim(dLine);
@@ -54,7 +56,7 @@ int main(void) {
     printf("t: %zu\n", t);
     printf("d: %zu\n", d);
 
-    for (int vel = 1; vel < t; ++vel) {
+    for (size_t vel = 1; vel < t; ++vel) {
         size_t dt = vel * (t - vel);
         // printf("vel: %d\n", vel);
         // printf("result: %d\n", dt);

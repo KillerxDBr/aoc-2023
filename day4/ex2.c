@@ -1,10 +1,5 @@
-#include <assert.h>
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "../include/da.h"
+#define NOB_IMPLEMENTATION
+#include "../include/nob.h"
 
 /*
 typedef struct {
@@ -35,14 +30,20 @@ size_t originalSize;
 #define SMALL 0
 #define BUFFER_SIZE 256
 
-int main(void) {
+int main(int argc, char **argv) {
+    const char *program = nob_shift(argv, argc);
+
+    if (!nob_set_current_dir(nob_temp_sprintf(SV_Fmt, (int)(nob_path_name(program) - program), program))) {
+        return 1;
+    }
+
     const char *separator = "===================";
 #if SMALL
-    const char *input = "day4/small.txt";
+    const char *input = "small.txt";
 #else
-    const char *input = "day4/input.txt";
+    const char *input = "input.txt";
 #endif
-    FILE *fd = fopen(input, "rt");
+    FILE *fd = fopen(input, "rb");
     if (fd == NULL) {
         fprintf(stderr, "[ERROR] Couldn't open file '%s': %s\n", input, strerror(errno));
         return 1;
@@ -59,7 +60,7 @@ int main(void) {
         if (endLine != NULL)
             endLine[0] = '\0';
         tmp = realloc(tmp, strlen(tmp) + 1);
-        da_append(&strings, tmp);
+        nob_da_append(&strings, tmp);
         tmp = malloc(BUFFER_SIZE);
     }
     fclose(fd);
@@ -79,12 +80,15 @@ int main(void) {
     } while (index != strings.count);
 
     size_t rst = strings.count;
-    da_free(&yourNumbers);
-    da_free(&winningNumbers);
-    da_free(&result);
-    da_free_ptr(&strings);
-    puts(separator);
-    printf("Resultado: %zu\n", rst);
+
+    nob_da_free(yourNumbers);
+    nob_da_free(winningNumbers);
+    nob_da_free(result);
+
+    for (size_t i = 0; i < strings.count; ++i)
+        free((void *)strings.items[i]);
+
+    printf("%s\nResultado: %zu\n", separator, rst);
     return 0;
 }
 
@@ -104,7 +108,7 @@ void updateNumbers(Strings *strings, Numbers *yourNumbers, Numbers *winningNumbe
             str++;
             str++;
             str = strchr(str, ' ');
-            da_append(winningNumbers, n);
+            nob_da_append(winningNumbers, n);
         }
         sep++;
 
@@ -113,7 +117,7 @@ void updateNumbers(Strings *strings, Numbers *yourNumbers, Numbers *winningNumbe
             sep++;
             sep++;
             sep = strchr(sep, ' ');
-            da_append(yourNumbers, n);
+            nob_da_append(yourNumbers, n);
         }
     }
 }
@@ -132,7 +136,7 @@ void updateStrings(Strings *strings, size_t ysize, size_t wsize, Numbers *yourNu
                     n++;
             }
         }
-        da_append(result, n);
+        nob_da_append(result, n);
         n = 0;
     }
 
@@ -152,7 +156,7 @@ void updateStrings(Strings *strings, size_t ysize, size_t wsize, Numbers *yourNu
             // printf("%zu\n", strToDup);
             assert(strToDup < originalSize);
             dupString = strdup(strings->items[strToDup + j]);
-            da_append(strings, dupString);
+            nob_da_append(strings, dupString);
         }
     }
 }

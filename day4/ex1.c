@@ -1,9 +1,5 @@
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "../include/da.h"
+#define NOB_IMPLEMENTATION
+#include "../include/nob.h"
 
 /*
 typedef struct {
@@ -32,13 +28,18 @@ typedef struct {
 #define LINE_SIZE 116
 #endif
 
-int main(void) {
+int main(int argc, char **argv) {
+    const char *program = nob_shift(argv, argc);
+
+    if (!nob_set_current_dir(nob_temp_sprintf(SV_Fmt, (int)(nob_path_name(program) - program), program))) {
+        return 1;
+    }
 #if SMALL
-    const char *input = "day4/small.txt";
+    const char *input = "small.txt";
 #else
-    const char *input = "day4/input.txt";
+    const char *input = "input.txt";
 #endif
-    FILE *fd = fopen(input, "rt");
+    FILE *fd = fopen(input, "rb");
     if (fd == NULL) {
         fprintf(stderr, "[ERROR] Couldn't open file '%s': %s\n", input, strerror(errno));
         return 1;
@@ -53,7 +54,7 @@ int main(void) {
     while (fgets(tmp, 255, fd) != NULL) {
         tmp[LINE_SIZE] = 0;
         tmp = realloc(tmp, strlen(tmp) + 1);
-        da_append(&strings, tmp);
+        nob_da_append(&strings, tmp);
         tmp = malloc(256);
     }
     fclose(fd);
@@ -74,7 +75,7 @@ int main(void) {
             tmp++;
             tmp++;
             tmp = strchr(tmp, ' ');
-            da_append(&yourNumbers, n);
+            nob_da_append(&yourNumbers, n);
             ysize++;
         }
         sep++;
@@ -84,14 +85,15 @@ int main(void) {
             sep++;
             sep = strchr(sep, ' ');
             // printf("seu numero: %d\n",n);
-            da_append(&winningNumbers, n);
+            nob_da_append(&winningNumbers, n);
             wsize++;
         }
 
         printf("%s\n", strings.items[i]);
     }
 
-    da_free_ptr(&strings);
+    for (size_t i = 0; i < strings.count; ++i)
+        free((void *)strings.items[i]);
 
     size_t soma = 0, tmpSoma = 0;
     size_t wn, yn;
@@ -115,7 +117,7 @@ int main(void) {
                 break;
             }
         }
-        da_append(&result, tmpSoma);
+        nob_da_append(&result, tmpSoma);
         tmpSoma = 0;
     }
     // puts("\n===================");
@@ -124,9 +126,9 @@ int main(void) {
         printf("Jogo %zu: %zu\n", i + 1, result.items[i]);
     }
 
-    da_free(&yourNumbers);
-    da_free(&winningNumbers);
-    da_free(&result);
+    nob_da_free(yourNumbers);
+    nob_da_free(winningNumbers);
+    nob_da_free(result);
 
     printf("Resultado final: %zu\n", soma);
 

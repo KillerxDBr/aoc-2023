@@ -1,22 +1,13 @@
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#ifndef __max
-#define __max(a,b) (((a) > (b)) ? (a) : (b))
-#define __min(a,b) (((a) < (b)) ? (a) : (b))
-#endif
-
-#include "../include/da.h"
-
 #define NOB_IMPLEMENTATION
 #include "../include/nob.h"
 
-#define SV_IMPLEMENTATION
-#include "../include/sv.h"
+#define DA_ARRAY(name, dtype)                                                                                                              \
+    typedef struct {                                                                                                                       \
+        dtype *items;                                                                                                                      \
+        size_t count, capacity;                                                                                                            \
+    } name
 
-da_array(Strings, char *);
+DA_ARRAY(Strings, char *);
 
 typedef struct {
     size_t dest, src, len;
@@ -37,9 +28,9 @@ typedef struct {
 //     size_t loc;
 // } Mapping;
 
-da_array(Ranges, Range);
-da_array(Seeds, Seed);
-// da_array(Mappings, Mapping);
+DA_ARRAY(Ranges, Range);
+DA_ARRAY(Seeds, Seed);
+// DA_ARRAY(Mappings, Mapping);
 
 void parseSeeds(Nob_String_View sv, Seeds *seeds);
 size_t parseRange(Strings *strings, Ranges *arrRange, size_t index);
@@ -69,13 +60,18 @@ typedef enum {
 } Mode;
 
 // #define SMALL
-int main(void) {
+int main(int argc, char **argv) {
+    const char *program = nob_shift(argv, argc);
+
+    if (!nob_set_current_dir(nob_temp_sprintf(SV_Fmt, (int)(nob_path_name(program) - program), program))) {
+        return 1;
+    }
 
 #ifdef SMALL
-    const char *input = "day5/small.txt";
+    const char *input = "small.txt";
 #define ST_FMT "%02zu"
 #else
-    const char *input = "day5/input.txt";
+    const char *input = "input.txt";
 #define ST_FMT "%010zu"
 #endif
     int result = 0;
@@ -101,7 +97,7 @@ int main(void) {
             nob_return_defer(1);
         }
         // memcpy(tmp, sv2.data, sv2.count);
-        if (sprintf(tmp, SV_Fmt, SV_Arg(sv2)) != sv2.count) {
+        if ((size_t)sprintf(tmp, SV_Fmt, SV_Arg(sv2)) != sv2.count) {
             nob_log(NOB_ERROR, "Could not copy string: %s", strerror(errno));
             nob_return_defer(1);
         }
@@ -132,7 +128,7 @@ int main(void) {
         Nob_String_View sv_tmp = nob_sv_from_cstr(strings.items[i]);
 
         // if (nob_sv_eq(nob_sv_from_parts(strings.items[i], strlen(labels[0])), nob_sv_from_cstr(labels[0]))) {
-        if (sv_starts_with(sv_tmp, nob_sv_from_cstr(labels[0]))) {
+        if (nob_sv_starts_with(sv_tmp, nob_sv_from_cstr(labels[0]))) {
             mode = SEEDS;
         } else if (nob_sv_eq(sv_tmp, nob_sv_from_cstr(labels[1]))) {
             mode = SOIL;
@@ -164,37 +160,37 @@ int main(void) {
             break;
         case SOIL:
             // printf("SOIL: '%s'\n", strings.items[i]);
-            parseRange2(sv_from_cstr(strings.items[i]), &SoilRange);
+            parseRange2(nob_sv_from_cstr(strings.items[i]), &SoilRange);
             break;
 
         case FERT:
             // printf("FERT: '%s'\n", strings.items[i]);
-            parseRange2(sv_from_cstr(strings.items[i]), &FertRange);
+            parseRange2(nob_sv_from_cstr(strings.items[i]), &FertRange);
             break;
 
         case WATER:
             // printf("WATER: '%s'\n", strings.items[i]);
-            parseRange2(sv_from_cstr(strings.items[i]), &WaterRange);
+            parseRange2(nob_sv_from_cstr(strings.items[i]), &WaterRange);
             break;
 
         case LIGHT:
             // printf("LIGHT: '%s'\n", strings.items[i]);
-            parseRange2(sv_from_cstr(strings.items[i]), &LightRange);
+            parseRange2(nob_sv_from_cstr(strings.items[i]), &LightRange);
             break;
 
         case TEMP:
             // printf("TEMP: '%s'\n", strings.items[i]);
-            parseRange2(sv_from_cstr(strings.items[i]), &TempRange);
+            parseRange2(nob_sv_from_cstr(strings.items[i]), &TempRange);
             break;
 
         case HUMID:
             // printf("HUMID: '%s'\n", strings.items[i]);
-            parseRange2(sv_from_cstr(strings.items[i]), &HumidRange);
+            parseRange2(nob_sv_from_cstr(strings.items[i]), &HumidRange);
             break;
 
         case LOC:
             // printf("LOC: '%s'\n", strings.items[i]);
-            parseRange2(sv_from_cstr(strings.items[i]), &LocRange);
+            parseRange2(nob_sv_from_cstr(strings.items[i]), &LocRange);
             break;
         default:
             printf("Mode: %d\n", mode);
@@ -215,7 +211,8 @@ int main(void) {
     // clang-format on
     printf("-----------------------------\n");
     for (size_t i = 0; i < seeds.count; ++i)
-        printf("Seed       %02zu: \"" ST_FMT " -> "ST_FMT"\"\n", i + 1, seeds.items[i].start, seeds.items[i].start+seeds.items[i].range-1);
+        printf("Seed       %02zu: \"" ST_FMT " -> " ST_FMT "\"\n", i + 1, seeds.items[i].start,
+               seeds.items[i].start + seeds.items[i].range - 1);
     printf("-----------------------------\n");
     for (size_t i = 0; i < SoilRange.count; ++i)
         printf("SoilRange  %02zu: \"" ST_FMT " " ST_FMT " " ST_FMT "\"\n", i + 1, SoilRange.items[i].dest, SoilRange.items[i].src,
@@ -253,9 +250,7 @@ int main(void) {
     for (size_t i = 0; i < seeds.count; ++i) {
         n = 0;
         for (size_t j = 0; j < seeds.items[i].range; ++j) {
-
             n = seeds.items[i].start + j;
-            // clang-format off
             n = checkRange(n, &SoilRange);
             n = checkRange(n, &FertRange);
             n = checkRange(n, &WaterRange);
@@ -263,12 +258,10 @@ int main(void) {
             n = checkRange(n, &TempRange);
             n = checkRange(n, &HumidRange);
             n = checkRange(n, &LocRange);
-            // clang-format on
             // nob_da_append(&mappings, m);
             lowestLocation = __min(lowestLocation, n);
         }
     }
-
 
     // assert(mappings.count > 0);
 
@@ -276,8 +269,10 @@ int main(void) {
     // for (size_t i = 0; i < mappings.count; ++i) {
     //     Mapping m = mappings.items[i];
     //     // clang-format off
-    //     printf("Seed %02zu: "ST_FMT", Soil: "ST_FMT", Fertilizer: "ST_FMT", Water: "ST_FMT", Light: "ST_FMT", Temperature: "ST_FMT", Humidity: "ST_FMT", Location: "ST_FMT"\n",
-    //                  i+1,    m.seed,         m.soil,         m.fert,               m.water,         m.light,         m.temp,                m.humid,            m.loc);
+    //     printf("Seed %02zu: "ST_FMT", Soil: "ST_FMT", Fertilizer: "ST_FMT", Water: "ST_FMT", Light: "ST_FMT", Temperature: "ST_FMT",
+    //     Humidity: "ST_FMT", Location: "ST_FMT"\n",
+    //                  i+1,    m.seed,         m.soil,         m.fert,               m.water,         m.light,         m.temp, m.humid,
+    //                  m.loc);
     //     // clang-format on
     //     lowestLocation = __min(lowestLocation, m.loc);
     // }
@@ -285,18 +280,20 @@ int main(void) {
     // fflush(stdout);
 
 defer:
-    da_free_ptr(&strings);
+    for (size_t i = 0; i < strings.count; ++i)
+        free((void *)strings.items[i]);
+    nob_da_free(strings);
 
-    da_free(&seeds);
-    da_free(&SoilRange);
-    da_free(&FertRange);
-    da_free(&WaterRange);
-    da_free(&LightRange);
-    da_free(&TempRange);
-    da_free(&HumidRange);
-    da_free(&LocRange);
+    nob_da_free(seeds);
+    nob_da_free(SoilRange);
+    nob_da_free(FertRange);
+    nob_da_free(WaterRange);
+    nob_da_free(LightRange);
+    nob_da_free(TempRange);
+    nob_da_free(HumidRange);
+    nob_da_free(LocRange);
 
-    // da_free(&mappings);
+    // nob_da_free(mappings);
 
     nob_sb_free(sb);
 
@@ -312,7 +309,7 @@ size_t parseRange(Strings *strings, Ranges *arrRange, size_t index) {
     Range range = { 0 };
     while (index < strings->count && strlen(strings->items[index]) != 0) {
         sscanf(strings->items[index], "%zu %zu %zu", &range.dest, &range.src, &range.len);
-        da_append(arrRange, range);
+        nob_da_append(arrRange, range);
         index++;
     }
     return index;
@@ -320,9 +317,9 @@ size_t parseRange(Strings *strings, Ranges *arrRange, size_t index) {
 
 void parseRange2(Nob_String_View sv, Ranges *arrRange) {
     Range r = {
-        .dest = sv_to_u64(nob_sv_chop_by_delim(&sv, ' ')),
-        .src = sv_to_u64(nob_sv_chop_by_delim(&sv, ' ')),
-        .len = sv_to_u64(nob_sv_chop_by_delim(&sv, ' ')),
+        .dest = nob_sv_to_u64(nob_sv_chop_by_delim(&sv, ' ')),
+        .src = nob_sv_to_u64(nob_sv_chop_by_delim(&sv, ' ')),
+        .len = nob_sv_to_u64(nob_sv_chop_by_delim(&sv, ' ')),
     };
 
     assert(sv.count == 0);
@@ -334,8 +331,8 @@ void parseSeeds(Nob_String_View sv, Seeds *seeds) {
     nob_sv_chop_by_delim(&sv, ' ');
     while (sv.count > 0) {
         Seed s = {
-            .start = sv_to_u64(nob_sv_chop_by_delim(&sv, ' ')),
-            .range = sv_to_u64(nob_sv_chop_by_delim(&sv, ' ')),
+            .start = nob_sv_to_u64(nob_sv_chop_by_delim(&sv, ' ')),
+            .range = nob_sv_to_u64(nob_sv_chop_by_delim(&sv, ' ')),
         };
         nob_da_append(seeds, s);
     }

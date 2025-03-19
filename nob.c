@@ -3,6 +3,7 @@
 
 bool buildExes(void);
 bool clearExes(void);
+bool runExes(void);
 
 #ifdef _WIN32
 #define WIN32_EXE ".exe"
@@ -10,29 +11,68 @@ bool clearExes(void);
 #define WIN32_EXE ""
 #endif // _WIN32
 
+Nob_File_Paths fp = { 0 };
+
 int main(int argc, char **argv) {
     NOB_GO_REBUILD_URSELF_PLUS(argc, argv, "include/nob.h");
 
-    const char *command;
     const char *program = nob_shift(argv, argc);
 
-    if (argc > 0)
-        command = nob_shift(argv, argc);
-    else
-        command = "build";
-
-    // nob_log(NOB_INFO, "Command: '%s'", command);
-    if ((strcmp(command, "build") == 0) || (strcmp(command, "b") == 0)) {
-        nob_log(NOB_INFO, "Building...");
-        return !buildExes();
+    bool build = false;
+    bool clear = false;
+    bool run = false;
+    for (int i = 0; i < argc; ++i) {
+        if ((strcmp(argv[i], "build") == 0) || (strcmp(argv[i], "b") == 0)) {
+            build = true;
+            continue;
+        }
+        if ((strcmp(argv[i], "clear") == 0) || (strcmp(argv[i], "c") == 0)) {
+            clear = true;
+            continue;
+        }
+        if ((strcmp(argv[i], "run") == 0) || (strcmp(argv[i], "r") == 0)) {
+            run = true;
+            continue;
+        }
+        if (build && clear && run)
+            break;
     }
-
-    if ((strcmp(command, "clear") == 0) || (strcmp(command, "c") == 0)) {
+    if (!build && !clear)
+        build = true;
+    // nob_log(NOB_INFO, "Command: '%s'", command);
+    if (clear) {
         nob_log(NOB_INFO, "Cleaning...");
         return !clearExes();
     }
-    nob_log(NOB_ERROR, "Unknown command: '%s'", command);
-    printf("[USAGE] %s <[b]uild, [c]lear>", program);
+
+    if (build) {
+        nob_log(NOB_INFO, "Building...");
+        if (!buildExes())
+            return 1;
+        if (run) {
+            nob_log(NOB_INFO, "Running Executables...");
+            return !runExes();
+        }
+    }
+
+    for (size_t i = 0; i < fp.count; ++i) {
+        free((void *)fp.items[i]);
+    }
+    nob_da_free(fp);
+
+    Nob_String_Builder sb = { 0 };
+    Nob_String_View sv;
+
+    for (int i = 0; i < argc; ++i) {
+        nob_sb_append_cstr(&sb, argv[i]);
+        nob_sb_append_cstr(&sb, " ");
+    }
+    sv = nob_sv_trim(nob_sb_to_sv(sb));
+    if(sv.count)
+        nob_log(NOB_ERROR, "Unknown command: '" SV_Fmt "'", SV_Arg(sv));
+    nob_sb_free(sb);
+
+    printf("[USAGE] %s <[b]uild, [c]lear>\n", program);
     return 1;
 }
 
@@ -41,16 +81,18 @@ bool buildExes(void) {
 
     Nob_Cmd cmd = { 0 };
 
-    if(nob_needs_rebuild("libwinsane.o", (const char*[]){"winsane.c", "manifest.rc", "utf8.xml"}, 3) > 0) {
+    if (nob_needs_rebuild("libwinsane.o", (const char *[]){ "winsane.c", "manifest.rc", "utf8.xml" }, 3) > 0) {
         nob_cmd_append(&cmd, "gcc", "-c", "winsane.c");
-        if(!nob_cmd_run_sync_and_reset(&cmd)) nob_return_defer(false);
+        if (!nob_cmd_run_sync_and_reset(&cmd))
+            nob_return_defer(false);
 
         nob_cmd_append(&cmd, "windres", "-o", "manifest.o", "manifest.rc");
-        if(!nob_cmd_run_sync_and_reset(&cmd)) nob_return_defer(false);
+        if (!nob_cmd_run_sync_and_reset(&cmd))
+            nob_return_defer(false);
 
         nob_cmd_append(&cmd, "ld.exe", "-relocatable", "-o", "libwinsane.o", "winsane.o", "manifest.o");
-        if(!nob_cmd_run_sync_and_reset(&cmd)) nob_return_defer(false);
-
+        if (!nob_cmd_run_sync_and_reset(&cmd))
+            nob_return_defer(false);
     }
 
     nob_cmd_append(&cmd, "gcc", "-Wall", "-Wextra", "-Og", "-g3", "-ggdb3", "-lm");
@@ -72,11 +114,13 @@ bool buildExes(void) {
 
             const char *exePath = nob_temp_sprintf("day%zu/ex%zu" WIN32_EXE, day + 1, exN + 1);
 
-            if (nob_needs_rebuild(exePath, (const char*[]){srcPath, "libwinsane.o"}, 2) != 0) {
+            if (nob_needs_rebuild(exePath, (const char *[]){ srcPath, "libwinsane.o" }, 2) != 0) {
                 nob_cmd_append(&cmd, "-o", exePath, srcPath, "libwinsane.o");
 
                 continueComp = continueComp & nob_cmd_run_sync(cmd);
             }
+            char *s = strdup(exePath);
+            nob_da_append(&fp, s);
         }
         nob_temp_rewind(exCP);
         if (nob_file_exists(nob_temp_sprintf("day%zu/", day + 1)) < 1)
@@ -182,4 +226,23 @@ bool clearExes(void) {
     nob_sb_free(sb);
 
     return true;
+}
+
+bool runExes(void) {
+    bool result = true;
+
+    Nob_Cmd cmd = { 0 };
+
+    for (size_t i = 0; i < fp.count; ++i) {
+        nob_log(NOB_INFO, "Running %s...", fp.items[i]);
+        nob_cmd_append(&cmd, fp.items[i]);
+        if (!nob_cmd_run_sync_and_reset(&cmd)) {
+            nob_log(NOB_ERROR, "Could not run '%s'", fp.items[i]);
+            nob_return_defer(false);
+        }
+    }
+
+defer:
+    nob_cmd_free(cmd);
+    return result;
 }

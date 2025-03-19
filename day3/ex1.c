@@ -1,11 +1,5 @@
-#include <ctype.h>
-#include <errno.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "../include/da.h"
+#define NOB_IMPLEMENTATION
+#include "../include/nob.h"
 
 typedef struct {
     char **items;
@@ -47,13 +41,20 @@ typedef struct {
 #else
 #define LINE_SIZE 140
 #endif
-int main(void) {
+
+int main(int argc, char **argv) {
+    const char *program = nob_shift(argv, argc);
+
+    if (!nob_set_current_dir(nob_temp_sprintf(SV_Fmt, (int)(nob_path_name(program) - program), program))) {
+        return 1;
+    }
+
 #if SMALL
-    const char *input = "day3/small.txt";
+    const char *input = "small.txt";
 #else
-    const char *input = "day3/input.txt";
+    const char *input = "input.txt";
 #endif
-    FILE *fd = fopen(input, "rt");
+    FILE *fd = fopen(input, "rb");
     if (fd == NULL) {
         fprintf(stderr, "[ERROR] Couldn't open file '%s': %s\n", input, strerror(errno));
         return 1;
@@ -64,7 +65,7 @@ int main(void) {
     while (fgets(tmp, 255, fd) != NULL) {
         tmp[LINE_SIZE] = 0;
         tmp = realloc(tmp, strlen(tmp) + 1);
-        da_append(&strings, tmp);
+        nob_da_append(&strings, tmp);
         tmp = malloc(256);
     }
     free(tmp);
@@ -87,7 +88,7 @@ int main(void) {
                     inc++;
 
                 if (!isdigit(n.c)) {
-                    da_append(&symbles, n);
+                    nob_da_append(&symbles, n);
                 } else {
 
                     node_t *prev = &n;
@@ -100,7 +101,7 @@ int main(void) {
                         prev->next = nextNode;
                         prev = nextNode;
                     }
-                    da_append(&digits, n);
+                    nob_da_append(&digits, n);
                 }
             }
             j += inc;
@@ -131,21 +132,25 @@ int main(void) {
                     }
                     if (counting && head != prevHead) {
                         prevHead = head;
-                        char *tmp = calloc(len + 1, sizeof(char));
+                        tmp = calloc(len + 1, sizeof(char));
                         while (head != NULL) {
                             sprintf(tmp, "%s%c", tmp, head->c);
                             head = head->next;
                         }
                         soma += strtoull(tmp, NULL, 10);
+                        free(tmp);
                     }
                 }
             }
         }
     }
 
-    da_free_ptr(&strings);
-    da_free(&digits);
-    da_free(&symbles);
+    for (size_t i = 0; i < strings.count; ++i)
+        free((void *)strings.items[i]);
+
+    nob_da_free(strings);
+    nob_da_free(digits);
+    nob_da_free(symbles);
 
     printf("Resultado final: %zu\n", soma);
     return 0;

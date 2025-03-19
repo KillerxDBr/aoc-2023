@@ -1,19 +1,11 @@
-#include <errno.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#define NOB_IMPLEMENTATION
+#include "../include/nob.h"
 
 #define RED_CUBE 12
 #define GRN_CUBE 13
 #define BLU_CUBE 14
 
 #define CUBE_QTD 100
-
-#ifndef __max
-#define __max(a,b) (((a) > (b)) ? (a) : (b))
-#define __min(a,b) (((a) < (b)) ? (a) : (b))
-#endif
 
 typedef struct cubes_s {
     size_t id, plays;
@@ -24,9 +16,15 @@ size_t getId(const char *line);
 size_t getPlays(const char *line);
 void calcCubes(cubes_t *cubes, const char *line);
 
-int main(void) {
-    const char *input = "day2/input.txt";
-    FILE *fd = fopen(input, "rt");
+int main(int argc, char **argv) {
+    const char *program = nob_shift(argv, argc);
+
+    if (!nob_set_current_dir(nob_temp_sprintf(SV_Fmt, (int)(nob_path_name(program) - program), program))) {
+        return 1;
+    }
+
+    const char *input = "input.txt";
+    FILE *fd = fopen(input, "rb");
     if (fd == NULL) {
         fprintf(stderr, "[ERROR] Couldn't open file '%s': %s\n", input, strerror(errno));
         return 1;

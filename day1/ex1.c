@@ -1,18 +1,17 @@
-#include <ctype.h>
-#include <errno.h>
-#include <stdio.h>
-#include <string.h>
-
-#ifndef __max
-#define __max(a,b) (((a) > (b)) ? (a) : (b))
-#define __min(a,b) (((a) < (b)) ? (a) : (b))
-#endif
+#define NOB_IMPLEMENTATION
+#include "../include/nob.h"
 
 #define BUF_SIZE 256
 
-int main(void) {
-    const char *input = "day1/input.txt";
-    FILE *fd = fopen(input, "rt");
+int main(int argc, char **argv) {
+    const char *program = nob_shift(argv, argc);
+
+    if (!nob_set_current_dir(nob_temp_sprintf(SV_Fmt, (int)(nob_path_name(program) - program), program))) {
+        return 1;
+    }
+
+    const char *input = "input.txt";
+    FILE *fd = fopen(input, "rb");
     if (fd == NULL) {
         fprintf(stderr, "[ERROR] Couldn't open file '%s': %s\n", input, strerror(errno));
         return 1;
