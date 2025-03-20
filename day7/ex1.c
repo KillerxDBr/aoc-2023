@@ -1,6 +1,10 @@
 #define NOB_IMPLEMENTATION
 #include "../include/nob.h"
 
+#ifndef max
+#define max(a, b) (((a) > (b)) ? (a) : (b))
+#endif
+
 typedef enum {
     HIGH_CARD,
     ONE_PAIR,
@@ -25,6 +29,14 @@ typedef struct {
     size_t count, capacity;
 } Hands;
 
+#define SMALL
+
+#ifdef SMALL
+#define INPUT_FILE "input.txt"
+#else
+#define INPUT_FILE "exemple.txt"
+#endif // SMALL
+
 int main(int argc, char **argv) {
     int result = 0;
 
@@ -33,36 +45,46 @@ int main(int argc, char **argv) {
         nob_return_defer(1);
     }
 
+    nob_temp_reset();
+
     Hands hands = { 0 };
     Nob_String_Builder sb = { 0 };
     Nob_String_View sv = { 0 };
 
-    if (!nob_read_entire_file("exemple.txt", &sb)) {
+    if (!nob_read_entire_file(INPUT_FILE, &sb)) {
         nob_return_defer(1);
     }
 
     sv = nob_sv_trim(nob_sb_to_sv(sb));
 
-    Hand h;
+    Hand h = { 0 };
     while (sv.count) {
-        Nob_String_View sv2 = nob_sv_trim(nob_sv_chop_by_delim(&sv, '\n'));
-        memcpy(h.cards, sv2.data, 5);
-        nob_sv_chop_by_delim(&sv2, ' ');
+        Nob_String_View line = nob_sv_trim(nob_sv_chop_by_delim(&sv, '\n'));
+        memcpy(h.cards, line.data, 5);
+        nob_sv_chop_by_delim(&line, ' ');
 
-        sv2 = nob_sv_trim(sv2);
-        h.bid = nob_sv_to_u64(sv2);
+        line = nob_sv_trim(line);
+        h.bid = nob_sv_to_u64(line);
 
         nob_da_append(&hands, h);
+        memset(&h, 0, sizeof(h));
     }
 
     nob_sb_free(sb);
     memset(&sb, 0, sizeof(sb));
     memset(&sv, 0, sizeof(sv));
 
+    uint64_t b = 0;
+    for (size_t i = 0; i < hands.count; ++i)
+        b = max(b, hands.items[i].bid);
+
+    const int isz = snprintf(NULL, 0, "%zu", hands.count - 1);
+    // printf("Max Bid: %zu\n", b);
+    const int bsz = snprintf(NULL, 0, "%zu", b);
+
     nob_log(NOB_INFO, "Number of entries: %zu", hands.count);
     for (size_t i = 0; i < hands.count; ++i) {
-        h = hands.items[i];
-        nob_log(NOB_INFO, "Hand: " SV_Fmt " | Bid %zu", 5, h.cards, h.bid);
+        nob_log(NOB_INFO, "Hand %*zu: " SV_Fmt " | Bid: %*zu", isz, i, 5, hands.items[i].cards, bsz, hands.items[i].bid);
     }
 
 defer:
