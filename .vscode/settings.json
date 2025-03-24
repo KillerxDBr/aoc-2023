@@ -1,7 +1,0 @@
-{
-    "files.associations": {
-        "*.h": "c",
-        "*.c": "c"
-    },
-    "C_Cpp.default.compilerPath": "C:\\msys64\\ucrt64\\bin\\gcc.exe"
-}
