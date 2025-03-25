@@ -21,28 +21,37 @@ int main(int argc, char **argv) {
     bool build = false;
     bool clear = false;
     bool run = false;
-    for (int i = 0; i < argc; ++i) {
-        if ((strcmp(argv[i], "build") == 0) || (strcmp(argv[i], "b") == 0)) {
-            build = true;
-            continue;
-        }
-        if ((strcmp(argv[i], "clear") == 0) || (strcmp(argv[i], "c") == 0)) {
-            clear = true;
-            continue;
-        }
-        if ((strcmp(argv[i], "run") == 0) || (strcmp(argv[i], "r") == 0)) {
-            run = true;
-            continue;
-        }
-        if (build && clear && run)
-            break;
-    }
-    if (!build && !clear)
+
+    if (!argc)
         build = true;
-    // nob_log(NOB_INFO, "Command: '%s'", command);
+    else {
+        for (int i = 0; i < argc; ++i) {
+            if ((strcmp(argv[i], "build") == 0) || (strcmp(argv[i], "b") == 0)) {
+                build = true;
+                continue;
+            }
+            if ((strcmp(argv[i], "clear") == 0) || (strcmp(argv[i], "c") == 0)) {
+                clear = true;
+                continue;
+            }
+            if ((strcmp(argv[i], "run") == 0) || (strcmp(argv[i], "r") == 0)) {
+                run = true;
+                continue;
+            }
+            if (build && clear && run)
+                break;
+        }
+
+        if (run)
+            build = true;
+    }
+
     if (clear) {
         nob_log(NOB_INFO, "Cleaning...");
-        return !clearExes();
+        bool result = clearExes();
+
+        if (!build || !result)
+            return !result;
     }
 
     if (build) {
@@ -51,7 +60,7 @@ int main(int argc, char **argv) {
             return 1;
         if (run) {
             nob_log(NOB_INFO, "Running Executables...");
-            return !runExes();
+            runExes();
         }
         for (size_t i = 0; i < fp.count; ++i) {
             free((void *)fp.items[i]);
@@ -72,7 +81,7 @@ int main(int argc, char **argv) {
         nob_log(NOB_ERROR, "Unknown command: '" SV_Fmt "'", SV_Arg(sv));
     nob_sb_free(sb);
 
-    printf("[USAGE] %s <[b]uild, [c]lear>\n", program);
+    fprintf(stderr, "[USAGE] %s <[b]uild, [c]lear, [r]un>\n", program);
     return 1;
 }
 
@@ -82,6 +91,8 @@ bool buildExes(void) {
     Nob_Cmd cmd = { 0 };
 
     if (nob_needs_rebuild("libwinsane.o", (const char *[]){ "winsane.c", "manifest.rc", "utf8.xml" }, 3) > 0) {
+        nob_log(NOB_INFO, "Rebuilding libWinsane...");
+
         nob_cmd_append(&cmd, "gcc", "-c", "winsane.c");
         if (!nob_cmd_run_sync_and_reset(&cmd))
             nob_return_defer(false);
@@ -152,9 +163,7 @@ void recurse_dir(Nob_String_Builder *sb, EmbedFiles *eb) {
         sb->count--;
 
     for (size_t i = 0; i < children.count; i++) {
-        if (strcmp(children.items[i], ".") == 0)
-            continue;
-        if (strcmp(children.items[i], "..") == 0)
+        if ((strcmp(children.items[i], ".") == 0) || (strcmp(children.items[i], "..") == 0))
             continue;
 
         const size_t dir_qtd = sb->count;
