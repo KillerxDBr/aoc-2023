@@ -103,6 +103,7 @@
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS (1)
 #endif
+#define strdup _strdup
 #endif
 
 #ifndef NOBDEF
@@ -703,6 +704,24 @@ NOBDEF Nob_String_View nob_sv_from_parts(const char *data, size_t count);
 // nob_sb_to_sv() enables you to just view Nob_String_Builder as Nob_String_View
 #define nob_sb_to_sv(sb) nob_sv_from_parts((sb).items, (sb).count)
 
+NOBDEF Nob_String_View nob_sv_take_left_while(Nob_String_View sv, bool (*predicate)(char x));
+NOBDEF Nob_String_View nob_sv_chop_by_sv(Nob_String_View *sv, Nob_String_View thicc_delim);
+NOBDEF bool nob_sv_try_chop_by_delim(Nob_String_View *sv, char delim, Nob_String_View *chunk);
+NOBDEF Nob_String_View nob_sv_chop_right(Nob_String_View *sv, size_t n);
+NOBDEF Nob_String_View nob_sv_chop_left_while(Nob_String_View *sv, bool (*predicate)(char x));
+NOBDEF bool nob_sv_index_of(Nob_String_View sv, char c, size_t *index);
+NOBDEF bool nob_sv_eq_ignorecase(Nob_String_View a, Nob_String_View b);
+NOBDEF uint64_t nob_sv_to_u64(Nob_String_View sv);
+NOBDEF uint64_t nob_sv_chop_u64(Nob_String_View *sv);
+
+#define SV(cstr_lit) nob_sv_from_parts(cstr_lit, sizeof(cstr_lit) - 1)
+#define SV_STATIC(cstr_lit)   \
+    {                         \
+        sizeof(cstr_lit) - 1, \
+        (cstr_lit)            \
+    }
+
+#define SV_NULL nob_sv_from_parts(NULL, 0)
 // printf macros for String_View
 #ifndef SV_Fmt
 #define SV_Fmt "%.*s"
