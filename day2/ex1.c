@@ -1,5 +1,7 @@
-#define NOB_IMPLEMENTATION
+// #define NOB_IMPLEMENTATION
 #include "../include/nob.h"
+
+#include <inttypes.h>
 
 #define RED_CUBE 12
 #define GRN_CUBE 13

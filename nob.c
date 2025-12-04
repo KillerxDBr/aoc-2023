@@ -1,257 +1,170 @@
+#define NOBDEF static inline
+#define NOB_STRIP_PREFIX
 #define NOB_IMPLEMENTATION
 #include "include/nob.h"
 
-bool buildExes(void);
-bool clearExes(void);
-bool runExes(void);
+#ifndef CC
+#if defined(__GNUC__)
+#define CC "gcc"
+#elif defined(__clang__)
+#define CC "clang"
+#elif defined(_MSC_VER)
+#define CC "msvc"
+#else
+#define CC "cc"
+#endif
+#endif // nob_cc
+
+#ifndef PLAT
+#if defined(_WIN32)
+#if defined(_WIN64)
+#define PLAT "w64"
+#else
+#define PLAT "w32"
+#endif
+#elif defined(__linux__)
+#define PLAT "linux"
+#else
+#define PLAT "unk"
+#endif
+#endif
+
+#ifndef CC_STR
+#define CC_STR CC "_" PLAT
+#endif
+
+#if defined(_MSC_VER) && !defined(__clang__)
+#define OBJ_EXT ".obj"
+#else
+#define OBJ_EXT ".o"
+#endif
+
+#ifndef nob_cc_obj_output
+#if defined(_MSC_VER) && !defined(__clang__)
+#define nob_cc_obj_output(cmd, output_path) nob_cmd_append(cmd, nob_temp_sprintf("/Fo:%s", (output_path)))
+#else
+#define nob_cc_obj_output(cmd, output_path) nob_cc_output(cmd, output_path)
+#endif
+#endif // nob_cc_obj_output
+
+#ifndef nob_cc_define
+#if defined(_MSC_VER) && !defined(__clang__)
+#define nob_cc_define(cmd, def) nob_cmd_append(cmd, "/D", (def))
+#else
+#define nob_cc_define(cmd, def) nob_cmd_append(cmd, "-D", (def))
+#endif
+#endif
 
 #ifdef _WIN32
-#define WIN32_EXE ".exe"
+#define EXE_EXT ".exe"
 #else
-#define WIN32_EXE ""
-#endif // _WIN32
+#define EXE_EXT ""
+#endif
 
-Nob_File_Paths fp = { 0 };
+static inline const char *src_fmt(int day, int ex) { return temp_sprintf("day%d/ex%d.c", day, ex); }
+static inline const char *exe_fmt(int day, int ex) { return temp_sprintf("build/d%de%d" EXE_EXT, day, ex); }
+
+static const char *nob_obj = "build/nob_" CC_STR OBJ_EXT;
+
+Cmd cmd = {};
+String_Builder sb = {};
+Nob_Procs procs = {};
 
 int main(int argc, char **argv) {
-    NOB_GO_REBUILD_URSELF_PLUS(argc, argv, "include/nob.h");
+    int result = 0;
 
-    const char *program = nob_shift(argv, argc);
+#ifdef _WIN32
+    if (!IsDebuggerPresent())
+#endif
+        NOB_GO_REBUILD_URSELF_PLUS(argc, argv, "include/nob.h");
 
-    bool build = false;
+    // const char *program = nob_shift(argv, argc);
+
+    bool force = false;
     bool clear = false;
     bool run = false;
 
-    if (!argc)
-        build = true;
-    else {
+    if (argc > 1) {
         for (int i = 0; i < argc; ++i) {
-            if ((strcmp(argv[i], "build") == 0) || (strcmp(argv[i], "b") == 0)) {
-                build = true;
-                continue;
-            }
-            if ((strcmp(argv[i], "clear") == 0) || (strcmp(argv[i], "c") == 0)) {
+            if (!clear && ((strcmp(argv[i], "clear") == 0) || (strcmp(argv[i], "c") == 0))) {
                 clear = true;
                 continue;
             }
-            if ((strcmp(argv[i], "run") == 0) || (strcmp(argv[i], "r") == 0)) {
+            if (!run && ((strcmp(argv[i], "run") == 0) || (strcmp(argv[i], "r") == 0))) {
                 run = true;
                 continue;
             }
-            if (build && clear && run)
-                break;
+            if (!force && ((strcmp(argv[i], "force") == 0) || (strcmp(argv[i], "f") == 0))) {
+                force = true;
+                continue;
+            }
         }
-
-        if (run)
-            build = true;
     }
 
     if (clear) {
-        nob_log(NOB_INFO, "Cleaning...");
-        bool result = clearExes();
-
-        if (!build || !result)
-            return !result;
-    }
-
-    if (build) {
-        nob_log(NOB_INFO, "Building...");
-        if (!buildExes())
-            return 1;
-        if (run) {
-            nob_log(NOB_INFO, "Running Executables...");
-            runExes();
-        }
-        for (size_t i = 0; i < fp.count; ++i) {
-            free((void *)fp.items[i]);
-        }
-        nob_da_free(fp);
-        return 0;
-    }
-
-    Nob_String_Builder sb = { 0 };
-    Nob_String_View sv;
-
-    for (int i = 0; i < argc; ++i) {
-        nob_sb_append_cstr(&sb, argv[i]);
-        nob_sb_append_cstr(&sb, " ");
-    }
-    sv = nob_sv_trim(nob_sb_to_sv(sb));
-    if (sv.count)
-        nob_log(NOB_ERROR, "Unknown command: '" SV_Fmt "'", SV_Arg(sv));
-    nob_sb_free(sb);
-
-    fprintf(stderr, "[USAGE] %s <[b]uild, [c]lear, [r]un>\n", program);
-    return 1;
-}
-
-bool buildExes(void) {
-    bool result = true;
-
-    Nob_Cmd cmd = { 0 };
-
-    if (nob_needs_rebuild("libwinsane.o", (const char *[]){ "winsane.c", "manifest.rc", "utf8.xml" }, 3) > 0) {
-        nob_log(NOB_INFO, "Rebuilding libWinsane...");
-
-        nob_cmd_append(&cmd, "gcc", "-c", "winsane.c");
-        if (!nob_cmd_run_sync_and_reset(&cmd))
-            nob_return_defer(false);
-
-        nob_cmd_append(&cmd, "windres", "-o", "manifest.o", "manifest.rc");
-        if (!nob_cmd_run_sync_and_reset(&cmd))
-            nob_return_defer(false);
-
-        nob_cmd_append(&cmd, "ld.exe", "-relocatable", "-o", "libwinsane.o", "winsane.o", "manifest.o");
-        if (!nob_cmd_run_sync_and_reset(&cmd))
-            nob_return_defer(false);
-    }
-
-    nob_cmd_append(&cmd, "gcc", "-Wall", "-Wextra", "-Og", "-g3", "-ggdb3", "-lm");
-#ifndef _WIN32
-    nob_cmd_append(&cmd, "-fsanitize=address");
-#endif // !_WIN32
-    const size_t cmdBkp = cmd.count;
-
-    bool continueComp = true;
-
-    for (size_t day = 0; continueComp; day++) {
-        const size_t exCP = nob_temp_save();
-        for (size_t exN = 0; continueComp; exN++) {
-            cmd.count = cmdBkp;
-            const char *srcPath = nob_temp_sprintf("day%zu/ex%zu.c", day + 1, exN + 1);
-
-            if (nob_file_exists(srcPath) < 1)
-                break;
-
-            const char *exePath = nob_temp_sprintf("day%zu/ex%zu" WIN32_EXE, day + 1, exN + 1);
-
-            if (nob_needs_rebuild(exePath, (const char *[]){ srcPath, "libwinsane.o" }, 2) != 0) {
-                nob_cmd_append(&cmd, "-o", exePath, srcPath, "libwinsane.o");
-
-                continueComp = continueComp & nob_cmd_run_sync(cmd);
+        if (file_exists("build/") > 0) {
+            File_Paths fp = {};
+            if (!read_entire_dir("build/", &fp)) {
+                da_free(fp);
+                return_defer(1);
             }
-            char *s = strdup(exePath);
-            nob_da_append(&fp, s);
+            for (size_t i = 2; i < fp.count; ++i) {
+                delete_file(temp_sprintf("build/%s", fp.items[i]));
+            }
+            da_free(fp);
+            return_defer(0);
         }
-        nob_temp_rewind(exCP);
-        if (nob_file_exists(nob_temp_sprintf("day%zu/", day + 1)) < 1)
-            break;
     }
 
-    if (!continueComp)
-        nob_return_defer(false);
+    if (!mkdir_if_not_exists("build/"))
+        return_defer(1);
+
+    if (force || needs_rebuild1(nob_obj, "include/nob.h") > 0) {
+        nob_cc(&cmd);
+
+        nob_cc_obj_output(&cmd, nob_obj);
+        nob_cc_define(&cmd, "NOB_IMPLEMENTATION");
+        nob_cc_inputs(&cmd, "-xc", "-c", "include/nob.h", "-O2");
+        nob_cc_flags(&cmd);
+
+        cmd_run(&cmd);
+    }
+
+    char folder[6];
+    for (int day = 1; true; ++day) {
+        snprintf(folder, sizeof(folder), "day%d", day);
+        if (file_exists(folder) < 1)
+            break;
+        for (int ex = 1; ex < 3; ++ex) {
+            const char *srcFile = src_fmt(day, ex);
+            const char *output = exe_fmt(day, ex);
+
+            if (file_exists(srcFile) < 1)
+                continue;
+
+            const char *deps[] = {
+                srcFile,
+                nob_obj,
+            };
+
+            if (force || needs_rebuild(output, (void*)deps, ARRAY_LEN(deps)) > 0) {
+                nob_cc(&cmd);
+                nob_cc_output(&cmd, output);
+                nob_cc_inputs(&cmd, srcFile, nob_obj);
+                nob_cc_flags(&cmd);
+
+                cmd_run(&cmd, .async = &procs);
+            }
+        }
+    }
+
+    if (!procs_flush(&procs))
+        return_defer(1);
 
 defer:
-    nob_cmd_free(cmd);
-    return result;
-}
+    cmd_free(cmd);
+    sb_free(sb);
+    da_free(procs);
 
-typedef struct {
-    char **items;
-    size_t count;
-    size_t capacity;
-} EmbedFiles;
-
-void recurse_dir(Nob_String_Builder *sb, EmbedFiles *eb) {
-    Nob_File_Paths children = { 0 };
-
-    if (sb->items[sb->count - 1] != 0)
-        nob_sb_append_null(sb);
-
-    nob_read_entire_dir(sb->items, &children);
-    if (sb->items[sb->count - 1] == 0)
-        sb->count--;
-
-    for (size_t i = 0; i < children.count; i++) {
-        if ((strcmp(children.items[i], ".") == 0) || (strcmp(children.items[i], "..") == 0))
-            continue;
-
-        const size_t dir_qtd = sb->count;
-
-        // nob_log(NOB_INFO, "Last Char: '%c'(count - 1)", sb->items[sb->count - 1]);
-        if (sb->items[sb->count - 1] != '\\' && sb->items[sb->count - 1] != '/') {
-            // nob_log(NOB_INFO, "Appending '/' to sb");
-            nob_sb_append_cstr(sb, "/");
-        }
-
-        nob_sb_append_cstr(sb, children.items[i]);
-        nob_sb_append_null(sb);
-        Nob_File_Type rst = nob_get_file_type(sb->items);
-        // printf("File: %s | Type '%d'\n", sb->items, rst);
-        switch (rst) {
-        case NOB_FILE_DIRECTORY:
-            sb->count--;
-            recurse_dir(sb, eb);
-            sb->count = dir_qtd;
-            break;
-        case NOB_FILE_REGULAR:
-            // printf("%s\n",sb->items);
-            nob_da_append(eb, strdup(sb->items));
-            // sb->count--;
-            sb->count = dir_qtd;
-            break;
-        default:
-            continue;
-        }
-        // break;
-    }
-    free(children.items);
-}
-
-bool clearExes(void) {
-    Nob_String_Builder sb = { 0 };
-    for (size_t day = 0; true; day++) {
-        const size_t exCP = nob_temp_save();
-        for (size_t exN = 0; exN < 2; exN++) {
-            sb.count = 0;
-            const char *exePath = nob_temp_sprintf("day%zu/ex%zu", day + 1, exN + 1);
-            nob_sb_append_cstr(&sb, exePath);
-            Nob_String_Builder sb2 = sb;
-            nob_sb_append_cstr(&sb, ".exe");
-
-            nob_sb_append_null(&sb);
-            if (nob_file_exists(sb.items) == 1) {
-                nob_log(NOB_INFO, "Deleting '%s'", sb.items);
-                if (remove(sb.items) != 0)
-                    nob_log(NOB_ERROR, "Could not remove file '%s': %s", sb.items, strerror(errno));
-            }
-
-            nob_sb_append_null(&sb2);
-            if (nob_file_exists(sb2.items) == 1) {
-                nob_log(NOB_INFO, "Deleting '%s'", sb2.items);
-                if (remove(sb2.items) != 0)
-                    nob_log(NOB_ERROR, "Could not remove file '%s': %s", sb2.items, strerror(errno));
-            }
-
-            // printf("sb:  '"SB_Fmt"'\n", SB_Arg(sb));
-            // printf("sb2: '"SB_Fmt"'\n", SB_Arg(sb2));
-            // printf("sb:  0x%p\n", sb.items);
-            // printf("sb2: 0x%p\n", sb2.items);
-        }
-        nob_temp_rewind(exCP);
-        if (nob_file_exists(nob_temp_sprintf("day%zu/", day + 1)) < 1)
-            break;
-    }
-    nob_sb_free(sb);
-
-    return true;
-}
-
-bool runExes(void) {
-    bool result = true;
-
-    Nob_Cmd cmd = { 0 };
-
-    for (size_t i = 0; i < fp.count; ++i) {
-        nob_log(NOB_INFO, "Running %s...", fp.items[i]);
-        nob_cmd_append(&cmd, fp.items[i]);
-        if (!nob_cmd_run_sync_and_reset(&cmd)) {
-            nob_log(NOB_ERROR, "Could not run '%s'", fp.items[i]);
-            nob_return_defer(false);
-        }
-    }
-
-defer:
-    nob_cmd_free(cmd);
     return result;
 }

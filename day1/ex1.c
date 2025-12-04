@@ -1,39 +1,50 @@
-#define NOB_IMPLEMENTATION
+// #define NOB_IMPLEMENTATION
 #include "../include/nob.h"
 
 #define BUF_SIZE 256
 
 int main(int argc, char **argv) {
-    const char *program = nob_shift(argv, argc);
+    Nob_String_Builder sb = {};
 
-    if (!nob_set_current_dir(nob_temp_sprintf(SV_Fmt, (int)(nob_path_name(program) - program), program))) {
+    const char *input;
+    if (argc > 1)
+        input = argv[1];
+    else
+        input = "input.txt";
+
+    // FILE *fd = fopen(input, "rb");
+    // if (fd == NULL) {
+    //     fprintf(stderr, "[ERROR] Couldn't open file '%s': %s\n", input, strerror(errno));
+    //     return 1;
+    // }
+
+    if (!nob_read_entire_file(input, &sb)) {
         return 1;
     }
 
-    const char *input = "input.txt";
-    FILE *fd = fopen(input, "rb");
-    if (fd == NULL) {
-        fprintf(stderr, "[ERROR] Couldn't open file '%s': %s\n", input, strerror(errno));
-        return 1;
-    }
+    Nob_String_View content = nob_sv_trim(nob_sb_to_sv(sb));
+    Nob_String_View line;
 
-    char line[256];
     size_t soma = 0;
     size_t fdigit = 0;
     size_t ldigit = 0;
-    while (fgets(line, 255, fd) != NULL) {
-        for (size_t i = 0; i < strlen(line); ++i) {
-            if (isdigit(line[i])) {
+
+    while (content.count) {
+        line = nob_sv_trim(nob_sv_chop_by_delim(&content, '\n'));
+        for (size_t i = 0; i < line.count; ++i) {
+            if (isdigit(line.data[i])) {
                 if (fdigit == 0)
-                    fdigit = line[i] - '0';
-                ldigit = line[i] - '0';
+                    fdigit = line.data[i] - '0';
+                ldigit = line.data[i] - '0';
             }
         }
-        printf("Linha: %s fdigit: %zu ldigit: %zu\n", line, fdigit, ldigit);
+        nob_log(NOB_INFO, "Linha: " SV_Fmt " fdigit: %zu ldigit: %zu", SV_Arg(line), fdigit, ldigit);
         soma += (fdigit * 10) + ldigit;
         fdigit = 0;
         ldigit = 0;
     }
-    printf("Resultado final: %zu\n", soma);
+
+    nob_log(NOB_INFO, "Resultado final: %zu", soma);
+    nob_sb_free(sb);
     return 0;
 }

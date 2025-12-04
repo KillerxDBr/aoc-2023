@@ -1,6 +1,6 @@
 #define NOMINMAX
 
-#define NOB_IMPLEMENTATION
+// #define NOB_IMPLEMENTATION
 #include "../include/nob.h"
 
 #ifndef max

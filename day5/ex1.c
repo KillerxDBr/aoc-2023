@@ -1,5 +1,8 @@
-#define NOB_IMPLEMENTATION
+// #define NOB_IMPLEMENTATION
 #include "../include/nob.h"
+
+#include <stdlib.h>
+#include <inttypes.h>
 
 #define DA_ARRAY(name, dtype)                                                                                                              \
     typedef struct {                                                                                                                       \
