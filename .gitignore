@@ -1,5 +1,5 @@
-# Created by https://www.toptal.com/developers/gitignore/api/c,visualstudiocode
-# Edit at https://www.toptal.com/developers/gitignore?templates=c,visualstudiocode
+# Created by https://www.toptal.com/developers/gitignore/api/visualstudiocode,c,c++
+# Edit at https://www.toptal.com/developers/gitignore?templates=visualstudiocode,c,c++
 
 ### C ###
 # Prerequisites
@@ -55,13 +55,32 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
+### C++ ###
+# Prerequisites
+
+# Compiled Object files
+*.slo
+
+# Precompiled Headers
+
+# Compiled Dynamic libraries
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+
+# Executables
+
 ### VisualStudioCode ###
-.vscode/
-# !.vscode/settings.json
-# !.vscode/tasks.json
-# !.vscode/launch.json
-# !.vscode/extensions.json
-# !.vscode/*.code-snippets
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
 
 # Local History for Visual Studio Code
 .history/
@@ -74,7 +93,7 @@ dkms.conf
 .history
 .ionide
 
-# End of https://www.toptal.com/developers/gitignore/api/c,visualstudiocode
+# End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,c,c++
 
 output.txt
 .gdb_history
@@ -87,3 +106,4 @@ nob.exe.old
 ex1
 ex2
 test.c
+build/
