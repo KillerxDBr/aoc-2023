@@ -682,7 +682,7 @@ NOBDEF void nob__go_rebuild_urself(int argc, char **argv, const char *source_pat
 //     // ...
 //     return 0;
 // }
-#define NOB_GO_REBUILD_URSELF_PLUS(argc, argv, ...) nob__go_rebuild_urself(argc, argv, __FILE__, __VA_ARGS__, NULL);
+#define NOB_GO_REBUILD_URSELF_PLUS(argc, argv, ...) nob__go_rebuild_urself(argc, argv, __FILE__, __VA_ARGS__, NULL)
 
 typedef struct {
     size_t count;
@@ -2089,12 +2089,14 @@ NOBDEF bool nob_read_entire_file(const char *path, Nob_String_Builder *sb)
 
     new_count = sb->count + m;
     if (new_count > sb->capacity) {
-        sb->items = NOB_DECLTYPE_CAST(sb->items)NOB_REALLOC(sb->items, new_count);
+        sb->items = (char *)NOB_REALLOC(sb->items, new_count);
         NOB_ASSERT(sb->items != NULL && "Buy more RAM lool!!");
         sb->capacity = new_count;
     }
 
-    fread(sb->items + sb->count, m, 1, f);
+    if (fread(sb->items + sb->count, 1, m, f) != (size_t)m) {
+        nob_return_defer(false);
+    }
     if (ferror(f)) {
         // TODO: Afaik, ferror does not set errno. So the error reporting in defer is not correct in this case.
         nob_return_defer(false);
