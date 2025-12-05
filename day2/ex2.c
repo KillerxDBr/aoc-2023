@@ -9,14 +9,14 @@
 #define min(a, b) (((a) < (b)) ? (a) : (b))
 #endif
 
-int main(int argc, char **argv) {
-    const char *program = nob_shift(argv, argc);
+int main(void) {
+    // const char *program = nob_shift(argv, argc);
 
-    if (!nob_set_current_dir(nob_temp_sprintf(SV_Fmt, (int)(nob_path_name(program) - program), program))) {
-        return 1;
-    }
+    // if (!nob_set_current_dir(nob_temp_sprintf(SV_Fmt, (int)(nob_path_name(program) - program), program))) {
+    //     return 1;
+    // }
 
-    const char *input = "input.txt";
+    const char *input = "day2/input.txt";
     FILE *fd = fopen(input, "rb");
     if (fd == NULL) {
         fprintf(stderr, "[ERROR] Couldn't open file '%s': %s\n", input, strerror(errno));
@@ -48,6 +48,7 @@ int main(int argc, char **argv) {
         }
         soma += (r * g * b);
     }
+    fclose(fd);
     printf("Resultado: %zu\n", soma);
     return 0;
 }

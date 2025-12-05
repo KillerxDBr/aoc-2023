@@ -7,73 +7,82 @@
 #define GRN_CUBE 13
 #define BLU_CUBE 14
 
-#define CUBE_QTD 100
-
-typedef struct cubes_s {
+typedef struct cube {
     size_t id, plays;
     bool notValid;
-} cubes_t;
+} Cube;
+
+typedef struct {
+    Cube *items;
+    size_t count;
+    size_t capacity;
+} Cubes;
 
 size_t getId(const char *line);
 size_t getPlays(const char *line);
-void calcCubes(cubes_t *cubes, const char *line);
+void calcCubes(Cube *cubes, const char *line);
+
+Nob_String_Builder sb2 = {};
 
 int main(int argc, char **argv) {
-    const char *program = nob_shift(argv, argc);
-
-    if (!nob_set_current_dir(nob_temp_sprintf(SV_Fmt, (int)(nob_path_name(program) - program), program))) {
-        return 1;
-    }
-
     const char *input = "input.txt";
-    FILE *fd = fopen(input, "rb");
-    if (fd == NULL) {
-        fprintf(stderr, "[ERROR] Couldn't open file '%s': %s\n", input, strerror(errno));
-        return 1;
+    if (argc > 1) {
+        input = argv[1];
     }
 
-    cubes_t cubes[CUBE_QTD] = { 0 };
-    char line[256] = { 0 };
-    int i = 0;
-    while (fgets(line, 255, fd) != NULL) {
+    Nob_String_Builder sb = {};
+    if (!nob_read_entire_file(input, &sb))
+        return 1;
+
+    Nob_String_View sv      = nob_sv_trim(nob_sb_to_sv(sb));
+    Cubes cubes = {};
+    while (sv.count) {
+        Cube c = {};
+        Nob_String_View sv2 = nob_sv_trim(nob_sv_chop_by_delim(&sv, '\n'));
+        const char *line    = nob_temp_sv_to_cstr(sv2);
         // printf("%s", line);
-        cubes[i].plays = getPlays(line);
+        c.plays = getPlays(line);
         // puts("getPlays OK!\n");
-        cubes[i].id = getId(line);
+        c.id = getId(line);
         // puts("getId OK!\n");
-        calcCubes(&cubes[i], line);
+        calcCubes(&c, line);
         // puts("calcCubes OK!");
-        printf("==========\n Cube: %d\n    Id:%zu\n    Plays: %zu\n", i + 1, cubes[i].id, cubes[i].plays);
-        if (cubes[i].notValid)
-            printf("    Cube %d is not valid\n", i + 1);
+        printf("==========\n Cube: %zu\n    Id:%zu\n    Plays: %zu\n", cubes.count + 1, c.id, c.plays);
+        if (c.notValid)
+            printf("    Cube %zu is not valid\n", cubes.count + 1);
         else
-            printf("    Cube %d is valid\n", i + 1);
-        i++;
+            printf("    Cube %zu is valid\n", cubes.count + 1);
+        nob_da_append(&cubes, c);
     }
-    fclose(fd);
+
     puts("==========\nCalculando: ");
     size_t soma = 0;
-    for (int i = 0; i < CUBE_QTD; i++) {
-        if (cubes[i].id == 0)
+    for (size_t i = 0; i < cubes.count; i++) {
+        if (cubes.items[i].id == 0)
             continue;
 
-        if (!cubes[i].notValid) {
-            soma += cubes[i].id;
+        if (!cubes.items[i].notValid) {
+            soma += cubes.items[i].id;
         }
     }
+    printf("cubes.count: %zu\n", cubes.count);
     printf("Resultado: %zu\n", soma);
+
+    nob_da_free(cubes);
+    nob_sb_free(sb);
+    nob_sb_free(sb2);
+
     return 0;
 }
 
 size_t getId(const char *line) {
-    char rst[5] = { 0 };
+    sb2.count   = 0;
     char *delim = strchr(line, ':');
-    // delim = strtok(NULL,":");
     for (int i = 5; i < delim - line; i++) {
-        sprintf(rst, "%s%c", rst, line[i]);
-        // printf("%d -> %c", i, line[i]);
+        nob_sb_append_buf(&sb2, &line[i], 1);
     }
-    return strtoull(rst, NULL, 10);
+    nob_sb_append_null(&sb2);
+    return strtoull(sb2.items, NULL, 10);
 }
 
 size_t getPlays(const char *line) {
@@ -85,12 +94,12 @@ size_t getPlays(const char *line) {
     }
     return rst + 1;
 }
-void calcCubes(cubes_t *cubes, const char *line) {
-    size_t qtd = 0;
+void calcCubes(Cube *cubes, const char *line) {
+    size_t qtd  = 0;
     char *start = strchr(line, ':');
     start++;
-    char color[6] = { 0 };
-    start = strtok(start, ",;");
+    char color[6] = {};
+    start         = strtok(start, ",;");
     while (start != NULL) {
         sscanf(start, "%zu %s", &qtd, color);
         if (strcmp(color, "red") == 0 && qtd > RED_CUBE) {

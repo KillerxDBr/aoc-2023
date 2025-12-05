@@ -12,46 +12,53 @@
 #endif
 
 int main(int argc, char **argv) {
-    const char *program = nob_shift(argv, argc);
+    const char *numeros[] = {
+        "one",  "two", "three", "four",          //
+        "five", "six", "seven", "eight", "nine", //
+        "1",    "2",   "3",     "4",             //
+        "5",    "6",   "7",     "8",     "9"     //
+    };
+    const size_t numerosCount = sizeof(numeros) / sizeof(numeros[0]);
 
-    if (!nob_set_current_dir(nob_temp_sprintf(SV_Fmt, (int)(nob_path_name(program) - program), program))) {
-        return 1;
-    }
-
-    const char *numeros[]
-        = { "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
-    size_t numerosCount = sizeof(numeros) / sizeof(numeros[0]);
     const char *input = "input.txt";
-    FILE *fd = fopen(input, "rb");
-    if (fd == NULL) {
-        fprintf(stderr, "[ERROR] Couldn't open file '%s': %s\n", input, strerror(errno));
-        return 1;
+    if (argc > 1) {
+        input = argv[1];
     }
 
-    char line[256];
+    Nob_String_Builder sb = {};
+    if (!nob_read_entire_file(input, &sb))
+        return 1;
 
-    size_t soma = 0, n1 = 0, n2 = 0;
-    while (fgets(line, 255, fd) != NULL) {
-        line[strlen(line) - 1] = '\0';
-        printf("%s -> (%p)\n", line, line);
-        size_t minDist = UINT64_MAX;
+    // char line[256];
+    Nob_String_View sv = nob_sv_trim(nob_sb_to_sv(sb));
+    Nob_String_View sv2;
+
+    size_t soma = 0;
+    size_t n1   = 0;
+    size_t n2   = 0;
+
+    while (sv.count) {
+        sv2 = nob_sv_trim(nob_sv_chop_by_delim(&sv, '\n'));
+        printf("sv2: " SV_Fmt "\n", SV_Arg(sv2));
+        size_t minDist = (size_t)~0;
         size_t maxDist = 0;
+        const char *line     = nob_temp_sv_to_cstr(sv2);
         for (size_t i = 0; i < numerosCount; i++) {
             char *tmp = strstr(line, numeros[i]);
-            if (tmp != NULL) {
-                while (tmp != NULL) {
-                    maxDist = max(maxDist, (size_t)(tmp - line));
-                    minDist = min(minDist, (size_t)(tmp - line));
-                    printf("minDist: %zu\n", minDist);
-                    printf("maxDist: %zu\n", maxDist);
-                    tmp++;
-                    tmp = strstr(tmp, numeros[i]);
-                }
+            // if (tmp != NULL) {
+            while (tmp != NULL) {
+                maxDist = max(maxDist, (size_t)(tmp - line));
+                minDist = min(minDist, (size_t)(tmp - line));
+                printf("minDist: %zu\n", minDist);
+                printf("maxDist: %zu\n", maxDist);
+                tmp++;
+                tmp = strstr(tmp, numeros[i]);
             }
+            // }
         }
-        n1 = 0;
-        n2 = 0;
-        char final[6] = { 0 };
+        n1            = 0;
+        n2            = 0;
+        char final[6] = {};
         strncpy(final, line + minDist, 6);
         final[5] = 0;
         for (size_t i = 0; i < numerosCount; i++) {
@@ -81,7 +88,8 @@ int main(int argc, char **argv) {
         printf("String %s adicionando %zu\n\tn1 = %zu\n\tn2 = %zu\n============\n", line, (n1 + n2), n1, n2);
         soma += (n1 + n2);
     }
-    fclose(fd);
     printf("Resultado final: %zu\n", soma);
+    fflush(stdout);
+    nob_sb_free(sb);
     return 0;
 }

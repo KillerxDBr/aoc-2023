@@ -29,31 +29,25 @@ typedef struct {
 #endif
 
 int main(int argc, char **argv) {
-    const char *program = nob_shift(argv, argc);
-
-    if (!nob_set_current_dir(nob_temp_sprintf(SV_Fmt, (int)(nob_path_name(program) - program), program))) {
-        return 1;
-    }
-#if SMALL
-    const char *input = "small.txt";
-#else
     const char *input = "input.txt";
-#endif
+    if (argc >= 2)
+        input = argv[1];
+
     FILE *fd = fopen(input, "rb");
     if (fd == NULL) {
         fprintf(stderr, "[ERROR] Couldn't open file '%s': %s\n", input, strerror(errno));
         return 1;
     }
 
-    Strings strings = { 0 };
-    Numbers yourNumbers = { 0 };
-    Numbers winningNumbers = { 0 };
-    Numbers result = { 0 };
+    Strings strings        = {};
+    Numbers yourNumbers    = {};
+    Numbers winningNumbers = {};
+    Numbers result         = {};
 
     char *tmp = malloc(256);
     while (fgets(tmp, 255, fd) != NULL) {
         tmp[LINE_SIZE] = 0;
-        tmp = realloc(tmp, strlen(tmp) + 1);
+        tmp            = realloc(tmp, strlen(tmp) + 1);
         nob_da_append(&strings, tmp);
         tmp = malloc(256);
     }
@@ -61,7 +55,9 @@ int main(int argc, char **argv) {
     free(tmp);
 
     char *sep = NULL;
-    size_t n, wsize, ysize;
+    size_t n;
+    size_t wsize = 0;
+    size_t ysize = 0;
     for (size_t i = 0; i < strings.count; i++) {
         wsize = 0;
         ysize = 0;
@@ -91,9 +87,6 @@ int main(int argc, char **argv) {
 
         printf("%s\n", strings.items[i]);
     }
-
-    for (size_t i = 0; i < strings.count; ++i)
-        free((void *)strings.items[i]);
 
     size_t soma = 0, tmpSoma = 0;
     size_t wn, yn;
@@ -125,7 +118,9 @@ int main(int argc, char **argv) {
         soma += result.items[i];
         printf("Jogo %zu: %zu\n", i + 1, result.items[i]);
     }
-
+    for (size_t i = 0; i < strings.count; ++i)
+        free((void *)strings.items[i]);
+    nob_da_free(strings);
     nob_da_free(yourNumbers);
     nob_da_free(winningNumbers);
     nob_da_free(result);

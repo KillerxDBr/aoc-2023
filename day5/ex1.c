@@ -1,13 +1,13 @@
 // #define NOB_IMPLEMENTATION
 #include "../include/nob.h"
 
-#include <stdlib.h>
 #include <inttypes.h>
+#include <stdlib.h>
 
-#define DA_ARRAY(name, dtype)                                                                                                              \
-    typedef struct {                                                                                                                       \
-        dtype *items;                                                                                                                      \
-        size_t count, capacity;                                                                                                            \
+#define DA_ARRAY(name, dtype)                                                                                          \
+    typedef struct {                                                                                                   \
+        dtype *items;                                                                                                  \
+        size_t count, capacity;                                                                                        \
     } name
 
 DA_ARRAY(Strings, char *);
@@ -58,24 +58,27 @@ typedef enum {
     LOC,
 } Mode;
 
+#ifndef min
+#define min(a, b) (((a) < (b)) ? (a) : (b))
+#endif
+
 // #define SMALL
 int main(int argc, char **argv) {
-    const char *program = nob_shift(argv, argc);
-
-    if (!nob_set_current_dir(nob_temp_sprintf(SV_Fmt, (int)(nob_path_name(program) - program), program))) {
-        return 1;
-    }
+    const char *input = "input.txt";
+    if (argc >= 2)
+        input = argv[1];
 
 #ifdef SMALL
-    const char *input = "small.txt";
+    // const char *input = "small.txt";
 #define ST_FMT "%02zu"
 #else
-    const char *input = "input.txt";
+    // const char *input = "input.txt";
 #define ST_FMT "%010zu"
 #endif
-    int result = 0;
-    Strings strings = { 0 };
-    Nob_String_Builder sb = { 0 };
+
+    int result            = 0;
+    Strings strings       = {};
+    Nob_String_Builder sb = {};
 
     if (!nob_read_entire_file(input, &sb)) {
         nob_sb_free(sb);
@@ -96,7 +99,7 @@ int main(int argc, char **argv) {
             nob_return_defer(1);
         }
         // memcpy(tmp, sv2.data, sv2.count);
-        if (sprintf(tmp, SV_Fmt, SV_Arg(sv2)) != sv2.count) {
+        if ((size_t)sprintf(tmp, SV_Fmt, SV_Arg(sv2)) != sv2.count) {
             nob_log(NOB_ERROR, "Could not copy string: %s", strerror(errno));
             nob_return_defer(1);
         }
@@ -108,17 +111,17 @@ int main(int argc, char **argv) {
 
     // nob_return_defer(0);
 
-    Seeds seeds = { 0 };
+    Seeds seeds = {};
     // clang-format off
-    Ranges SoilRange  = { 0 };
-    Ranges FertRange  = { 0 };
-    Ranges WaterRange = { 0 };
-    Ranges LightRange = { 0 };
-    Ranges TempRange  = { 0 };
-    Ranges HumidRange = { 0 };
-    Ranges LocRange   = { 0 };
+    Ranges SoilRange  = {};
+    Ranges FertRange  = {};
+    Ranges WaterRange = {};
+    Ranges LightRange = {};
+    Ranges TempRange  = {};
+    Ranges HumidRange = {};
+    Ranges LocRange   = {};
     // clang-format on
-    Mappings mappings = { 0 };
+    Mappings mappings = {};
 
     int mode = 0;
 
@@ -213,38 +216,38 @@ int main(int argc, char **argv) {
         printf("Seed       %02zu: \"" ST_FMT "\"\n", i + 1, seeds.items[i]);
     printf("-----------------------------\n");
     for (size_t i = 0; i < SoilRange.count; ++i)
-        printf("SoilRange  %02zu: \"" ST_FMT " " ST_FMT " " ST_FMT "\"\n", i + 1, SoilRange.items[i].dest, SoilRange.items[i].src,
-               SoilRange.items[i].len);
+        printf("SoilRange  %02zu: \"" ST_FMT " " ST_FMT " " ST_FMT "\"\n", i + 1, SoilRange.items[i].dest,
+               SoilRange.items[i].src, SoilRange.items[i].len);
     printf("-----------------------------\n");
     for (size_t i = 0; i < FertRange.count; ++i)
-        printf("FertRange  %02zu: \"" ST_FMT " " ST_FMT " " ST_FMT "\"\n", i + 1, FertRange.items[i].dest, FertRange.items[i].src,
-               FertRange.items[i].len);
+        printf("FertRange  %02zu: \"" ST_FMT " " ST_FMT " " ST_FMT "\"\n", i + 1, FertRange.items[i].dest,
+               FertRange.items[i].src, FertRange.items[i].len);
     printf("-----------------------------\n");
     for (size_t i = 0; i < WaterRange.count; ++i)
-        printf("WaterRange %02zu: \"" ST_FMT " " ST_FMT " " ST_FMT "\"\n", i + 1, WaterRange.items[i].dest, WaterRange.items[i].src,
-               WaterRange.items[i].len);
+        printf("WaterRange %02zu: \"" ST_FMT " " ST_FMT " " ST_FMT "\"\n", i + 1, WaterRange.items[i].dest,
+               WaterRange.items[i].src, WaterRange.items[i].len);
     printf("-----------------------------\n");
     for (size_t i = 0; i < LightRange.count; ++i)
-        printf("LightRange %02zu: \"" ST_FMT " " ST_FMT " " ST_FMT "\"\n", i + 1, LightRange.items[i].dest, LightRange.items[i].src,
-               LightRange.items[i].len);
+        printf("LightRange %02zu: \"" ST_FMT " " ST_FMT " " ST_FMT "\"\n", i + 1, LightRange.items[i].dest,
+               LightRange.items[i].src, LightRange.items[i].len);
     printf("-----------------------------\n");
     for (size_t i = 0; i < TempRange.count; ++i)
-        printf("TempRange  %02zu: \"" ST_FMT " " ST_FMT " " ST_FMT "\"\n", i + 1, TempRange.items[i].dest, TempRange.items[i].src,
-               TempRange.items[i].len);
+        printf("TempRange  %02zu: \"" ST_FMT " " ST_FMT " " ST_FMT "\"\n", i + 1, TempRange.items[i].dest,
+               TempRange.items[i].src, TempRange.items[i].len);
     printf("-----------------------------\n");
     for (size_t i = 0; i < HumidRange.count; ++i)
-        printf("HumidRange %02zu: \"" ST_FMT " " ST_FMT " " ST_FMT "\"\n", i + 1, HumidRange.items[i].dest, HumidRange.items[i].src,
-               HumidRange.items[i].len);
+        printf("HumidRange %02zu: \"" ST_FMT " " ST_FMT " " ST_FMT "\"\n", i + 1, HumidRange.items[i].dest,
+               HumidRange.items[i].src, HumidRange.items[i].len);
     printf("-----------------------------\n");
     for (size_t i = 0; i < LocRange.count; ++i)
-        printf("LocRange   %02zu: \"" ST_FMT " " ST_FMT " " ST_FMT "\"\n", i + 1, LocRange.items[i].dest, LocRange.items[i].src,
-               LocRange.items[i].len);
+        printf("LocRange   %02zu: \"" ST_FMT " " ST_FMT " " ST_FMT "\"\n", i + 1, LocRange.items[i].dest,
+               LocRange.items[i].src, LocRange.items[i].len);
 
     fflush(stdout);
 
     for (size_t i = 0; i < seeds.count; ++i) {
-        Mapping m = { 0 };
-        m.seed = seeds.items[i];
+        Mapping m = {};
+        m.seed    = seeds.items[i];
         // clang-format off
         m.soil  = checkRange(m.seed,  &SoilRange);
         m.fert  = checkRange(m.soil,  &FertRange);
@@ -268,9 +271,13 @@ int main(int argc, char **argv) {
         printf("Seed %02zu: "ST_FMT", Soil: "ST_FMT", Fertilizer: "ST_FMT", Water: "ST_FMT", Light: "ST_FMT", Temperature: "ST_FMT", Humidity: "ST_FMT", Location: "ST_FMT"\n",
                      i+1,    m.seed,         m.soil,         m.fert,               m.water,         m.light,         m.temp,                m.humid,            m.loc);
         // clang-format on
-        lowestLocation = __min(lowestLocation, m.loc);
+        lowestLocation = min(lowestLocation, m.loc);
     }
 
+    fflush(stdout);
+
+    printf("Final Result ------------------------\n");
+    printf("Lowest Location Number: %zu\n", lowestLocation);
     fflush(stdout);
 
 defer:
@@ -291,16 +298,12 @@ defer:
 
     nob_sb_free(sb);
 
-    printf("Final Result ------------------------\n");
-    printf("Lowest Location Number: %zu\n", lowestLocation);
-    fflush(stdout);
-
     return result;
 }
 
 size_t parseRange(Strings *strings, Ranges *arrRange, size_t index) {
     index++;
-    Range range = { 0 };
+    Range range = {};
     while (index < strings->count && strlen(strings->items[index]) != 0) {
         sscanf(strings->items[index], "%zu %zu %zu", &range.dest, &range.src, &range.len);
         nob_da_append(arrRange, range);
@@ -312,8 +315,8 @@ size_t parseRange(Strings *strings, Ranges *arrRange, size_t index) {
 void parseRange2(Nob_String_View sv, Ranges *arrRange) {
     Range r = {
         .dest = nob_sv_to_u64(nob_sv_chop_by_delim(&sv, ' ')),
-        .src = nob_sv_to_u64(nob_sv_chop_by_delim(&sv, ' ')),
-        .len = nob_sv_to_u64(nob_sv_chop_by_delim(&sv, ' ')),
+        .src  = nob_sv_to_u64(nob_sv_chop_by_delim(&sv, ' ')),
+        .len  = nob_sv_to_u64(nob_sv_chop_by_delim(&sv, ' ')),
     };
 
     assert(sv.count == 0);

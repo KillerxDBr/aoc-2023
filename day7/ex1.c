@@ -73,21 +73,17 @@ int sort_ranks(const void *a, const void *b) {
 int main(int argc, char **argv) {
     int result = 0;
 
-    const char *program = nob_shift(argv, argc);
-    if (!nob_set_current_dir(nob_temp_sprintf(SV_Fmt, (int)(nob_path_name(program) - program), program))) {
+    const char *input = "input.txt";
+    if (argc >= 2)
+        input = argv[1];
+
+    Nob_String_Builder sb = {};
+    if (!nob_read_entire_file(input, &sb))
         nob_return_defer(1);
-    }
 
-    nob_temp_reset();
-    Nob_String_Builder sb = { 0 };
-
-    if (!nob_read_entire_file(INPUT_FILE, &sb)) {
-        nob_return_defer(1);
-    }
-
-    Hand h = { 0 };
-    Hands hands = { 0 };
-    Nob_String_View sv = nob_sv_trim(nob_sb_to_sv(sb));
+    Hand h                 = {};
+    Hands hands            = {};
+    Nob_String_View sv     = nob_sv_trim(nob_sb_to_sv(sb));
     uint64_t totalWinnings = 0;
 
     while (sv.count) {
@@ -95,8 +91,8 @@ int main(int argc, char **argv) {
         memcpy(h.cards, line.data, 5);
         nob_sv_chop_by_delim(&line, ' ');
 
-        line = nob_sv_trim(line);
-        h.bid = nob_sv_to_u64(line);
+        line   = nob_sv_trim(line);
+        h.bid  = nob_sv_to_u64(line);
         h.rank = -1;
 
         nob_da_append(&hands, h);
@@ -113,7 +109,7 @@ int main(int argc, char **argv) {
         h = hands.items[i];
 
         for (size_t j = 0; j < 5; ++j) {
-            char c = h.cards[j];
+            char c        = h.cards[j];
             uint8_t count = 0;
 
             if (memchr(cs, c, 5))
@@ -126,7 +122,7 @@ int main(int argc, char **argv) {
                     count++;
 
             assert(count <= 5);
-            h.tokens[j].c = c;
+            h.tokens[j].c     = c;
             h.tokens[j].count = count;
         }
 
@@ -187,7 +183,7 @@ int main(int argc, char **argv) {
     printf("----------------------------\n");
     size_t rank = hands.count;
     for (size_t i = 0; i < hands.count; ++i) {
-        h = hands.items[i];
+        h      = hands.items[i];
         h.rank = rank--;
 
         printf("----------------------------\n");

@@ -12,12 +12,6 @@ int main(int argc, char **argv) {
     else
         input = "input.txt";
 
-    // FILE *fd = fopen(input, "rb");
-    // if (fd == NULL) {
-    //     fprintf(stderr, "[ERROR] Couldn't open file '%s': %s\n", input, strerror(errno));
-    //     return 1;
-    // }
-
     if (!nob_read_entire_file(input, &sb)) {
         return 1;
     }
@@ -25,7 +19,7 @@ int main(int argc, char **argv) {
     Nob_String_View content = nob_sv_trim(nob_sb_to_sv(sb));
     Nob_String_View line;
 
-    size_t soma = 0;
+    size_t soma   = 0;
     size_t fdigit = 0;
     size_t ldigit = 0;
 

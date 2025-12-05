@@ -1,3 +1,4 @@
+// #define NOBDEF static inline
 // #define NOB_IMPLEMENTATION
 #include "../include/nob.h"
 
@@ -16,70 +17,71 @@ typedef struct {
 } Numbers;
 
 typedef struct {
-    char **items;
+    const char **items;
     size_t count;
     size_t capacity;
 } Strings;
 
 void updateNumbers(Strings *strings, Numbers *yourNumbers, Numbers *winningNumbers, size_t index);
-void updateStrings(Strings *strings, size_t ysize, size_t wsize, Numbers *yourNumbers, Numbers *winningNumbers, size_t index,
-                   Numbers *result);
+void updateStrings(Strings *strings, size_t ysize, size_t wsize, Numbers *yourNumbers, Numbers *winningNumbers,
+                   size_t index, Numbers *result);
 
 size_t originalSize;
 
-#define SMALL 0
+#define SMALL       0
 #define BUFFER_SIZE 256
 
-int main(int argc, char **argv) {
-    const char *program = nob_shift(argv, argc);
-
-    if (!nob_set_current_dir(nob_temp_sprintf(SV_Fmt, (int)(nob_path_name(program) - program), program))) {
-        return 1;
-    }
-
-    const char *separator = "===================";
-#if SMALL
-    const char *input = "small.txt";
-#else
-    const char *input = "input.txt";
+#ifdef _WIN32
+static const char *strndup(const char *str, size_t n) {
+    const char *rst = calloc(n + 1, 1);
+    assert(rst != NULL);
+    memcpy((void *)rst, str, n);
+    return rst;
+}
 #endif
-    FILE *fd = fopen(input, "rb");
-    if (fd == NULL) {
-        fprintf(stderr, "[ERROR] Couldn't open file '%s': %s\n", input, strerror(errno));
+
+int main(int argc, char **argv) {
+    const char *separator = "===================";
+
+    const char *input = "input.txt";
+    if (argc >= 2)
+        input = argv[1];
+
+    Nob_String_Builder sb   = {};
+    Nob_String_View content = {};
+    if (!nob_read_entire_file(input, &sb))
         return 1;
+
+    content = nob_sv_trim(nob_sb_to_sv(sb));
+
+    Strings strings        = {};
+    Numbers yourNumbers    = {};
+    Numbers winningNumbers = {};
+    Numbers result         = {};
+
+    while (content.count) {
+        Nob_String_View sv2 = nob_sv_trim(nob_sv_chop_by_delim(&content, '\n'));
+        const char *str     = strndup(sv2.data, sv2.count);
+        // const char *str = nob_temp_sv_to_cstr(sv2);
+        nob_da_append(&strings, str);
     }
 
-    Strings strings = { 0 };
-    Numbers yourNumbers = { 0 };
-    Numbers winningNumbers = { 0 };
-    Numbers result = { 0 };
-
-    char *tmp = malloc(BUFFER_SIZE);
-    while (fgets(tmp, BUFFER_SIZE - 1, fd) != NULL) {
-        char *endLine = strchr(tmp, '\n');
-        if (endLine != NULL)
-            endLine[0] = '\0';
-        tmp = realloc(tmp, strlen(tmp) + 1);
-        nob_da_append(&strings, tmp);
-        tmp = malloc(BUFFER_SIZE);
-    }
-    fclose(fd);
-    free(tmp);
+    nob_sb_free(sb);
 
     originalSize = strings.count;
-    size_t tmpIndex;
     size_t index = 0;
     updateNumbers(&strings, &yourNumbers, &winningNumbers, index);
-    size_t wsize = winningNumbers.count / originalSize, ysize = yourNumbers.count / originalSize;
+    size_t wsize = winningNumbers.count / originalSize;
+    size_t ysize = yourNumbers.count / originalSize;
 
     do {
-        tmpIndex = strings.count;
+        size_t tmpIndex = strings.count;
         updateStrings(&strings, ysize, wsize, &yourNumbers, &winningNumbers, index, &result);
         index = tmpIndex;
         updateNumbers(&strings, &yourNumbers, &winningNumbers, index);
     } while (index != strings.count);
 
-    size_t rst = strings.count;
+    const size_t rst = strings.count;
 
     nob_da_free(yourNumbers);
     nob_da_free(winningNumbers);
@@ -87,6 +89,7 @@ int main(int argc, char **argv) {
 
     for (size_t i = 0; i < strings.count; ++i)
         free((void *)strings.items[i]);
+    nob_da_free(strings);
 
     printf("%s\nResultado: %zu\n", separator, rst);
     return 0;
@@ -122,8 +125,8 @@ void updateNumbers(Strings *strings, Numbers *yourNumbers, Numbers *winningNumbe
     }
 }
 
-void updateStrings(Strings *strings, size_t ysize, size_t wsize, Numbers *yourNumbers, Numbers *winningNumbers, size_t index,
-                   Numbers *result) {
+void updateStrings(Strings *strings, size_t ysize, size_t wsize, Numbers *yourNumbers, Numbers *winningNumbers,
+                   size_t index, Numbers *result) {
     size_t wn, yn;
     size_t n = 0;
 
@@ -155,6 +158,7 @@ void updateStrings(Strings *strings, size_t ysize, size_t wsize, Numbers *yourNu
             }
             // printf("%zu\n", strToDup);
             assert(strToDup < originalSize);
+            // dupString = nob_temp_strdup(strings->items[strToDup + j]);
             dupString = strdup(strings->items[strToDup + j]);
             nob_da_append(strings, dupString);
         }

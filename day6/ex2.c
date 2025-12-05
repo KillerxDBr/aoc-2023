@@ -17,23 +17,14 @@ uint64_t kxd_sv_chop_u64(Nob_String_View *sv);
 
 // #define SMALL
 int main(int argc, char **argv) {
-    const char *program = nob_shift(argv, argc);
-
-    if (!nob_set_current_dir(nob_temp_sprintf(SV_Fmt, (int)(nob_path_name(program) - program), program))) {
-        return 1;
-    }
-#ifdef SMALL
-    const char *input = "small.txt";
-#else
     const char *input = "input.txt";
-#endif
-    int result = 0;
-    Nob_String_Builder sb = { 0 };
+    if (argc >= 2)
+        input = argv[1];
 
-    if (!nob_read_entire_file(input, &sb)) {
-        nob_sb_free(sb);
+    Nob_String_Builder sb = {};
+    if (!nob_read_entire_file(input, &sb))
         return 1;
-    }
+
     Nob_String_View sv = nob_sb_to_sv(sb);
 
     Nob_String_View tLine = nob_sv_trim(nob_sv_chop_by_delim(&sv, '\n'));
@@ -49,8 +40,8 @@ int main(int argc, char **argv) {
     printf("tLine: '" SV_Fmt "'\n", SV_Arg(tLine));
     printf("dLine: '" SV_Fmt "'\n", SV_Arg(dLine));
 
-    size_t t = kxd_sv_chop_u64(&tLine);
-    size_t d = kxd_sv_chop_u64(&dLine);
+    size_t t   = kxd_sv_chop_u64(&tLine);
+    size_t d   = kxd_sv_chop_u64(&dLine);
     size_t rst = 0;
 
     printf("t: %zu\n", t);
@@ -70,7 +61,7 @@ int main(int argc, char **argv) {
     // nob_da_free(rst);
     nob_sb_free(sb);
 
-    return result;
+    return 0;
 }
 
 uint64_t kxd_sv_chop_u64(Nob_String_View *sv) {
