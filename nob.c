@@ -11,7 +11,7 @@
 #elif defined(_MSC_VER)
 #define CC "msvc"
 #else
-#define CC "cc"
+#define CC "unk"
 #endif
 #endif // nob_cc
 
@@ -66,23 +66,62 @@ static inline const char *exe_fmt(int day, int ex) { return temp_sprintf("build/
 
 static const char *nob_obj = "build/nob_" CC_STR OBJ_EXT;
 
-Cmd cmd = {};
+Cmd cmd           = {};
 String_Builder sb = {};
-Nob_Procs procs = {};
+Nob_Procs procs   = {};
+
+static inline bool nob_is_debugging(void) {
+#ifdef _WIN32
+    return IsDebuggerPresent();
+#else
+    bool result = false;
+
+    int fd = open("/proc/self/status", O_RDONLY);
+    if (fd == -1)
+        return false;
+
+    sb.count = 0;
+    char buf[256];
+    ssize_t nRead;
+    while ((nRead = read(fd, buf, sizeof(buf))) > 0) {
+        sb_append_buf(&sb, buf, nRead);
+    }
+    close(fd);
+    // nob_log(NOB_INFO, "self/status:\n" SV_Fmt, (int)sb.count, sb.items);
+    const String_View prefix = SV_STATIC("TracerPid:");
+
+    String_View sv = sv_trim(sb_to_sv(sb));
+    String_View sv2;
+
+    while (sv.count) {
+        sv2 = sv_chop_by_delim(&sv, '\n');
+        if (sv_starts_with(sv2, prefix)) {
+            nob_sv_chop_by_sv(&sv2, prefix);
+            sv2 = sv_trim(sv2);
+
+            if (nob_sv_chop_u64(&sv2) != 0) {
+                result = true;
+                break;
+            }
+        }
+    }
+
+    sb.count = 0;
+    return result;
+#endif
+}
 
 int main(int argc, char **argv) {
     int result = 0;
 
-#ifdef _WIN32
-    if (!IsDebuggerPresent())
-#endif
+    if (!nob_is_debugging())
         NOB_GO_REBUILD_URSELF_PLUS(argc, argv, "include/nob.h");
 
     // const char *program = nob_shift(argv, argc);
 
     bool force = false;
     bool clear = false;
-    bool run = false;
+    bool run   = false;
 
     if (argc > 1) {
         for (int i = 0; i < argc; ++i) {
@@ -125,19 +164,23 @@ int main(int argc, char **argv) {
         nob_cc_obj_output(&cmd, nob_obj);
         nob_cc_define(&cmd, "NOB_IMPLEMENTATION");
         nob_cc_inputs(&cmd, "-xc", "-c", "include/nob.h", "-O2");
+#ifndef _WIN32
+        nob_cc_inputs(&cmd, "-fsanitize=undefined,address", "-fno-omit-frame-pointer", "-g", "-Og");
+#endif
         nob_cc_flags(&cmd);
 
-        cmd_run(&cmd);
+        if (!cmd_run(&cmd))
+            return_defer(1);
     }
 
-    char folder[6];
+    char folder[32];
     for (int day = 1; true; ++day) {
         snprintf(folder, sizeof(folder), "day%d", day);
         if (file_exists(folder) < 1)
             break;
         for (int ex = 1; ex < 3; ++ex) {
             const char *srcFile = src_fmt(day, ex);
-            const char *output = exe_fmt(day, ex);
+            const char *output  = exe_fmt(day, ex);
 
             if (file_exists(srcFile) < 1)
                 continue;
@@ -147,10 +190,13 @@ int main(int argc, char **argv) {
                 nob_obj,
             };
 
-            if (force || needs_rebuild(output, (void*)deps, ARRAY_LEN(deps)) > 0) {
+            if (force || needs_rebuild(output, (void *)deps, ARRAY_LEN(deps)) > 0) {
                 nob_cc(&cmd);
                 nob_cc_output(&cmd, output);
                 nob_cc_inputs(&cmd, srcFile, nob_obj);
+#ifndef _WIN32
+                nob_cc_inputs(&cmd, "-fsanitize=undefined,address", "-fno-omit-frame-pointer", "-g", "-Og");
+#endif
                 nob_cc_flags(&cmd);
 
                 cmd_run(&cmd, .async = &procs);
@@ -160,6 +206,30 @@ int main(int argc, char **argv) {
 
     if (!procs_flush(&procs))
         return_defer(1);
+
+    if (run) {
+        Nob_File_Paths fp = {};
+        for (int day = 1; true; ++day) {
+            snprintf(folder, sizeof(folder), "day%d", day);
+            if (file_exists(folder) < 1)
+                break;
+            for (int ex = 1; ex < 3; ++ex) {
+                const char *exe = exe_fmt(day, ex);
+                if (file_exists(exe) < 1)
+                    continue;
+                const char *arg = temp_sprintf("day%d/input.txt", day);
+                nob_cmd_append(&cmd, exe, arg);
+                if (!cmd_run(&cmd)) {
+                    nob_da_append(&fp, exe);
+                }
+            }
+        }
+
+        for (size_t i = 0; i < fp.count; ++i)
+            nob_log(NOB_ERROR, "%s failed to Execute", fp.items[i]);
+
+        nob_da_free(fp);
+    }
 
 defer:
     cmd_free(cmd);
