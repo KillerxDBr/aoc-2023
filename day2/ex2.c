@@ -24,11 +24,7 @@ int main(int argc, char **argv) {
             free(fullPath);
         }
 
-#ifdef SMALL
-        input = "small.txt";
-#else
         input = "input.txt";
-#endif
     }
 
     FILE *fd = fopen(input, "rb");

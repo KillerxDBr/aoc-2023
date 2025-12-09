@@ -111,7 +111,6 @@ int main(int argc, char **argv) {
 
     nob_sb_free(sb);
     memset(&sb, 0, sizeof(sb));
-    memset(&sv, 0, sizeof(sv));
 
     char cs[5];
     for (size_t i = 0; i < hands.count; ++i) {
@@ -214,17 +213,10 @@ int main(int argc, char **argv) {
     printf("----------------------------\n");
     printf("Total Winnings: %zu\n", totalWinnings);
 
-#ifdef SMALL
-    if (totalWinnings != 6440) {
-        printf("ERROR: totalWinnings (%llu) != 6440\n", totalWinnings);
-    }
-#endif
-
     fflush(stdout);
 
-    nob_da_free(hands);
-
 defer:
+    nob_da_free(hands);
     return result;
 }
 

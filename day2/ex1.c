@@ -39,21 +39,17 @@ int main(int argc, char **argv) {
             free(fullPath);
         }
 
-#ifdef SMALL
-        input = "small.txt";
-#else
         input = "input.txt";
-#endif
     }
 
     Nob_String_Builder sb = {};
     if (!nob_read_entire_file(input, &sb))
         return 1;
 
-    Nob_String_View sv      = nob_sv_trim(nob_sb_to_sv(sb));
-    Cubes cubes = {};
+    Nob_String_View sv = nob_sv_trim(nob_sb_to_sv(sb));
+    Cubes cubes        = {};
     while (sv.count) {
-        Cube c = {};
+        Cube c              = {};
         Nob_String_View sv2 = nob_sv_trim(nob_sv_chop_by_delim(&sv, '\n'));
         const char *line    = nob_temp_sv_to_cstr(sv2);
         // printf("%s", line);

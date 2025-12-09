@@ -22,7 +22,7 @@ typedef struct {
     size_t capacity;
 } Strings;
 
-#define SMALL 0
+// #define SMALL
 #if SMALL
 #define LINE_SIZE 48
 #else

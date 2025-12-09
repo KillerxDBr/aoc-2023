@@ -20,11 +20,7 @@ int main(int argc, char **argv) {
             free(fullPath);
         }
 
-#ifdef SMALL
-        input = "small.txt";
-#else
         input = "input.txt";
-#endif
     }
 
     if (!nob_read_entire_file(input, &sb)) {

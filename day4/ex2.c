@@ -29,7 +29,7 @@ void updateStrings(Strings *strings, size_t ysize, size_t wsize, Numbers *yourNu
 
 size_t originalSize;
 
-#define SMALL       0
+// #define SMALL
 #define BUFFER_SIZE 256
 
 #ifdef _WIN32

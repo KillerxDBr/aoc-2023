@@ -34,11 +34,7 @@ int main(int argc, char **argv) {
             free(fullPath);
         }
 
-#ifdef SMALL
-        input = "small.txt";
-#else
         input = "input.txt";
-#endif
     }
 
     Nob_String_Builder sb = {};

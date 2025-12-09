@@ -29,7 +29,7 @@ typedef struct {
     size_t capacity;
 } Nodes;
 
-#define SMALL 0
+// #define SMALL
 #if SMALL
 #define LINE_SIZE 10
 #else
