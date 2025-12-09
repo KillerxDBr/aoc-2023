@@ -55,6 +55,14 @@
 #endif
 #endif
 
+#ifndef nob_cc_include
+#if defined(_MSC_VER) && !defined(__clang__)
+#define nob_cc_include(cmd, path) nob_cmd_append(cmd, "/I", (path))
+#else
+#define nob_cc_include(cmd, path) nob_cmd_append(cmd, "-I", (path))
+#endif
+#endif
+
 #ifdef _WIN32
 #define EXE_EXT ".exe"
 #else
@@ -64,7 +72,8 @@
 static inline const char *src_fmt(int day, int ex) { return temp_sprintf("day%d/ex%d.c", day, ex); }
 static inline const char *exe_fmt(int day, int ex) { return temp_sprintf("build/d%de%d" EXE_EXT, day, ex); }
 
-static const char *nob_obj = "build/nob_" CC_STR OBJ_EXT;
+static const char *nob_obj   = "build/nob_" CC_STR OBJ_EXT;
+static const char *utils_obj = "build/utils_" CC_STR OBJ_EXT;
 
 Cmd cmd           = {};
 String_Builder sb = {};
@@ -172,7 +181,22 @@ int main(int argc, char **argv) {
         if (!cmd_run(&cmd))
             return_defer(1);
     }
+    {
+        const char *deps[] = {"include/utils.h", "utils.c"};
+        if (force || needs_rebuild(utils_obj, deps, ARRAY_LEN(deps)) > 0) {
+            nob_cc(&cmd);
 
+            nob_cc_obj_output(&cmd, utils_obj);
+            nob_cc_inputs(&cmd, "-xc", "-c", "utils.c", "-O2");
+#ifndef _WIN32
+            nob_cc_inputs(&cmd, "-fsanitize=undefined,address", "-fno-omit-frame-pointer", "-g", "-Og");
+#endif
+            nob_cc_flags(&cmd);
+
+            if (!cmd_run(&cmd))
+                return_defer(1);
+        }
+    }
     char folder[32];
     for (int day = 1; true; ++day) {
         snprintf(folder, sizeof(folder), "day%d", day);
@@ -188,12 +212,14 @@ int main(int argc, char **argv) {
             const char *deps[] = {
                 srcFile,
                 nob_obj,
+                utils_obj,
             };
 
             if (force || needs_rebuild(output, (void *)deps, ARRAY_LEN(deps)) > 0) {
                 nob_cc(&cmd);
                 nob_cc_output(&cmd, output);
-                nob_cc_inputs(&cmd, srcFile, nob_obj);
+                nob_cc_inputs(&cmd, srcFile, nob_obj, utils_obj);
+                nob_cc_include(&cmd, "include/");
 #ifndef _WIN32
                 nob_cc_inputs(&cmd, "-fsanitize=undefined,address", "-fno-omit-frame-pointer", "-g", "-Og");
 #endif

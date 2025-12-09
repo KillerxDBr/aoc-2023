@@ -2440,6 +2440,7 @@ NOBDEF const char *nob_get_current_dir_temp(void)
 
 NOBDEF bool nob_set_current_dir(const char *path)
 {
+    nob_log(NOB_INFO, "Changing directory to '%s'", path);
 #ifdef _WIN32
     WCHAR wPath[MAX_PATH];
 
