@@ -33,6 +33,8 @@
 #define CC_STR CC "_" PLAT
 #endif
 
+#define FLAGS_BIN "flags_" CC_STR ".bin"
+
 #if defined(_MSC_VER) && !defined(__clang__)
 #define OBJ_EXT ".obj"
 #else
@@ -131,6 +133,7 @@ int main(int argc, char **argv) {
     bool force = false;
     bool clear = false;
     bool run   = false;
+    bool small = false;
 
     if (argc > 1) {
         for (int i = 0; i < argc; ++i) {
@@ -146,7 +149,23 @@ int main(int argc, char **argv) {
                 force = true;
                 continue;
             }
+            if (!small && ((strcmp(argv[i], "small") == 0) || (strcmp(argv[i], "s") == 0))) {
+                small = true;
+                continue;
+            }
         }
+    }
+
+    int flags           = 0;
+    bool force_src_only = false;
+    FILE *f             = fopen("build/" FLAGS_BIN, "rb");
+
+    if (f != NULL) {
+        assert(fread(&flags, sizeof(flags), 1, f) <= 1);
+        if (flags != (int)small) {
+            force_src_only = true;
+        }
+        fclose(f);
     }
 
     if (clear) {
@@ -173,23 +192,24 @@ int main(int argc, char **argv) {
         nob_cc_obj_output(&cmd, nob_obj);
         nob_cc_define(&cmd, "NOB_IMPLEMENTATION");
         nob_cc_inputs(&cmd, "-xc", "-c", "include/nob.h", "-O2");
-#ifndef _WIN32
-        nob_cc_inputs(&cmd, "-fsanitize=undefined,address", "-fno-omit-frame-pointer", "-g", "-Og");
+#if !defined(_MSC_VER) || defined(__clang__)
+        nob_cc_inputs(&cmd, "-fsanitize=undefined,address", "-fno-omit-frame-pointer", "-g");
 #endif
         nob_cc_flags(&cmd);
 
         if (!cmd_run(&cmd))
             return_defer(1);
     }
+
     {
         const char *deps[] = {"include/utils.h", "utils.c"};
         if (force || needs_rebuild(utils_obj, deps, ARRAY_LEN(deps)) > 0) {
             nob_cc(&cmd);
 
             nob_cc_obj_output(&cmd, utils_obj);
-            nob_cc_inputs(&cmd, "-xc", "-c", "utils.c", "-O2");
-#ifndef _WIN32
-            nob_cc_inputs(&cmd, "-fsanitize=undefined,address", "-fno-omit-frame-pointer", "-g", "-Og");
+            nob_cc_inputs(&cmd, "-c", "utils.c", "-O2");
+#if !defined(_MSC_VER) || defined(__clang__)
+            nob_cc_inputs(&cmd, "-fsanitize=undefined,address", "-fno-omit-frame-pointer", "-g");
 #endif
             nob_cc_flags(&cmd);
 
@@ -197,6 +217,10 @@ int main(int argc, char **argv) {
                 return_defer(1);
         }
     }
+
+    if (force_src_only) // only force rebuild of source files
+        force = true;
+
     char folder[32];
     for (int day = 1; true; ++day) {
         snprintf(folder, sizeof(folder), "day%d", day);
@@ -220,10 +244,13 @@ int main(int argc, char **argv) {
                 nob_cc_output(&cmd, output);
                 nob_cc_inputs(&cmd, srcFile, nob_obj, utils_obj);
                 nob_cc_include(&cmd, "include/");
-#ifndef _WIN32
+#if !defined(_MSC_VER) || defined(__clang__)
                 nob_cc_inputs(&cmd, "-fsanitize=undefined,address", "-fno-omit-frame-pointer", "-g", "-Og");
 #endif
                 nob_cc_flags(&cmd);
+                if (small) {
+                    nob_cc_define(&cmd, "SMALL");
+                }
 
                 cmd_run(&cmd, .async = &procs);
             }
@@ -243,8 +270,9 @@ int main(int argc, char **argv) {
                 const char *exe = exe_fmt(day, ex);
                 if (file_exists(exe) < 1)
                     continue;
-                const char *arg = temp_sprintf("day%d/input.txt", day);
-                nob_cmd_append(&cmd, exe, arg);
+                // const char *arg = temp_sprintf("day%d/input.txt", day);
+                // nob_cmd_append(&cmd, exe, arg);
+                nob_cmd_append(&cmd, exe);
                 if (!cmd_run(&cmd)) {
                     nob_da_append(&fp, exe);
                 }
@@ -255,6 +283,13 @@ int main(int argc, char **argv) {
             nob_log(NOB_ERROR, "%s failed to Execute", fp.items[i]);
 
         nob_da_free(fp);
+    }
+
+    f = fopen("build/" FLAGS_BIN, "wb");
+    if (f != NULL) {
+        flags = (int)small;
+        assert(fwrite(&flags, sizeof(flags), 1, f) == 1);
+        fclose(f);
     }
 
 defer:
