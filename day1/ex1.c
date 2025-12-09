@@ -1,16 +1,31 @@
 // #define NOB_IMPLEMENTATION
-#include "../include/nob.h"
-
+#include "nob.h"
+#include "utils.h"
 #define BUF_SIZE 256
 
+// #define SMALL
 int main(int argc, char **argv) {
     Nob_String_Builder sb = {};
 
     const char *input;
     if (argc > 1)
         input = argv[1];
-    else
+    else {
+        char *fullPath = GetFullPath(__FILE__, NULL, 0);
+        if (fullPath != NULL) {
+            if (!nob_set_current_dir(nob_temp_sprintf(SV_Fmt, (int)(nob_path_name(fullPath) - fullPath), fullPath))) {
+                return 1;
+            }
+
+            free(fullPath);
+        }
+
+#ifdef SMALL
+        input = "small.txt";
+#else
         input = "input.txt";
+#endif
+    }
 
     if (!nob_read_entire_file(input, &sb)) {
         return 1;

@@ -1,5 +1,6 @@
 // #define NOB_IMPLEMENTATION
-#include "../include/nob.h"
+#include "nob.h"
+#include "utils.h"
 
 typedef enum {
     HIGH_CARD,
@@ -38,13 +39,6 @@ typedef struct {
 void addValue(char *s, char ch, size_t len);
 
 // #define SMALL
-
-#ifndef SMALL
-#define INPUT_FILE "input.txt"
-#else
-#define INPUT_FILE "exemple.txt"
-#endif // SMALL
-
 int sort_tokens(const void *a, const void *b) {
     //    return (*(int*)a - *(int*)b);
     return (((Token *)b)->count - ((Token *)a)->count);
@@ -73,9 +67,25 @@ int sort_ranks(const void *a, const void *b) {
 int main(int argc, char **argv) {
     int result = 0;
 
-    const char *input = "input.txt";
-    if (argc >= 2)
+    const char *input;
+    if (argc > 1)
         input = argv[1];
+    else {
+        char *fullPath = GetFullPath(__FILE__, NULL, 0);
+        if (fullPath != NULL) {
+            if (!nob_set_current_dir(nob_temp_sprintf(SV_Fmt, (int)(nob_path_name(fullPath) - fullPath), fullPath))) {
+                return 1;
+            }
+
+            free(fullPath);
+        }
+
+#ifdef SMALL
+        input = "small.txt";
+#else
+        input = "input.txt";
+#endif
+    }
 
     Nob_String_Builder sb = {};
     if (!nob_read_entire_file(input, &sb))

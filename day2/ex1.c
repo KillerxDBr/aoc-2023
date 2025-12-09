@@ -1,5 +1,6 @@
 // #define NOB_IMPLEMENTATION
-#include "../include/nob.h"
+#include "nob.h"
+#include "utils.h"
 
 #include <inttypes.h>
 
@@ -25,9 +26,24 @@ void calcCubes(Cube *cubes, const char *line);
 Nob_String_Builder sb2 = {};
 
 int main(int argc, char **argv) {
-    const char *input = "input.txt";
-    if (argc > 1) {
+    const char *input;
+    if (argc > 1)
         input = argv[1];
+    else {
+        char *fullPath = GetFullPath(__FILE__, NULL, 0);
+        if (fullPath != NULL) {
+            if (!nob_set_current_dir(nob_temp_sprintf(SV_Fmt, (int)(nob_path_name(fullPath) - fullPath), fullPath))) {
+                return 1;
+            }
+
+            free(fullPath);
+        }
+
+#ifdef SMALL
+        input = "small.txt";
+#else
+        input = "input.txt";
+#endif
     }
 
     Nob_String_Builder sb = {};

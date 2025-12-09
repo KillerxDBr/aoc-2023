@@ -1,7 +1,8 @@
 #define NOMINMAX
 
 // #define NOB_IMPLEMENTATION
-#include "../include/nob.h"
+#include "nob.h"
+#include "utils.h"
 
 #ifndef max
 #define max(a, b) (((a) > (b)) ? (a) : (b))
@@ -20,9 +21,24 @@ int main(int argc, char **argv) {
     };
     const size_t numerosCount = sizeof(numeros) / sizeof(numeros[0]);
 
-    const char *input = "input.txt";
-    if (argc > 1) {
+    const char *input;
+    if (argc > 1)
         input = argv[1];
+    else {
+        char *fullPath = GetFullPath(__FILE__, NULL, 0);
+        if (fullPath != NULL) {
+            if (!nob_set_current_dir(nob_temp_sprintf(SV_Fmt, (int)(nob_path_name(fullPath) - fullPath), fullPath))) {
+                return 1;
+            }
+
+            free(fullPath);
+        }
+
+#ifdef SMALL
+        input = "small.txt";
+#else
+        input = "input.txt";
+#endif
     }
 
     Nob_String_Builder sb = {};
@@ -40,9 +56,9 @@ int main(int argc, char **argv) {
     while (sv.count) {
         sv2 = nob_sv_trim(nob_sv_chop_by_delim(&sv, '\n'));
         printf("sv2: " SV_Fmt "\n", SV_Arg(sv2));
-        size_t minDist = (size_t)~0;
-        size_t maxDist = 0;
-        const char *line     = nob_temp_sv_to_cstr(sv2);
+        size_t minDist   = (size_t)~0;
+        size_t maxDist   = 0;
+        const char *line = nob_temp_sv_to_cstr(sv2);
         for (size_t i = 0; i < numerosCount; i++) {
             char *tmp = strstr(line, numeros[i]);
             // if (tmp != NULL) {
