@@ -36,7 +36,8 @@ int main(int argc, char **argv) {
     else {
         char *fullPath = GetFullPath(__FILE__, NULL, 0);
         if (fullPath != NULL) {
-            if (!nob_set_current_dir(nob_temp_sprintf(SV_Fmt, (int)(nob_path_name(fullPath) - fullPath), fullPath))) {
+            fullPath[nob_path_name(fullPath) - fullPath] = '\0';
+            if (!nob_set_current_dir(fullPath)) {
                 return 1;
             }
 
