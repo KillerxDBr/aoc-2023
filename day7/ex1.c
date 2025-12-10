@@ -121,6 +121,7 @@ int main(int argc, char **argv) {
         for (size_t j = 0; j < 5; ++j) {
             char c        = h.cards[j];
             uint8_t count = 0;
+            assert(strchr(cards, c) != NULL);
 
             if (memchr(cs, c, 5))
                 continue;
@@ -134,15 +135,10 @@ int main(int argc, char **argv) {
             assert(count <= 5);
             h.tokens[j].c     = c;
             h.tokens[j].count = count;
+            h.ntok++;
         }
 
         qsort(h.tokens, 5, sizeof(Token), sort_tokens);
-
-        for (size_t j = 0; j < 5; ++j) {
-            if (h.tokens[j].count && h.tokens[j].c) {
-                ++h.ntok;
-            }
-        }
 
         hands.items[i] = h;
     }
@@ -206,7 +202,8 @@ int main(int argc, char **argv) {
             printf("'%c' -> %d %s\n", h.tokens[j].c, h.tokens[j].count, (h.tokens[j].count > 1) ? "times" : "time");
         }
 
-        printf("Tokens -> " SV_Fmt " (%d)\n", (int)sizeof(cs), cs, h.ntok);
+        // printf("Tokens -> " SV_Fmt " (%d)\n", (int)sizeof(cs), cs, h.ntok);
+        printf("Num Tokens -> %d\n", h.ntok);
         printf("Rank -> %zd\n", h.rank);
         printf("Calc: %zu\n", (h.bid * h.rank));
         totalWinnings += (h.bid * h.rank);
