@@ -713,6 +713,7 @@ NOBDEF bool nob_sv_index_of(Nob_String_View sv, char c, size_t *index);
 NOBDEF bool nob_sv_eq_ignorecase(Nob_String_View a, Nob_String_View b);
 NOBDEF uint64_t nob_sv_to_u64(Nob_String_View sv);
 NOBDEF uint64_t nob_sv_chop_u64(Nob_String_View *sv);
+NOBDEF int64_t nob_sv_chop_i64(Nob_String_View *sv);
 
 #define SV(cstr_lit) nob_sv_from_parts(cstr_lit, sizeof(cstr_lit) - 1)
 #define SV_STATIC(cstr_lit)   \
@@ -2364,6 +2365,22 @@ NOBDEF uint64_t nob_sv_chop_u64(Nob_String_View *sv) {
         sv->data += 1;
     }
     return result;
+}
+
+NOBDEF int64_t nob_sv_chop_i64(Nob_String_View *sv) {
+    bool negative  = false;
+    int64_t result = 0;
+    if (sv->count > 0 && sv->data[0] == '-') {
+        negative = true;
+        sv->count -= 1;
+        sv->data += 1;
+    }
+    while (sv->count > 0 && isdigit(*sv->data)) {
+        result = result * 10 + *sv->data - '0';
+        sv->count -= 1;
+        sv->data += 1;
+    }
+    return negative ? (result * -1) : result;
 }
 
 // RETURNS:

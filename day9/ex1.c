@@ -2,7 +2,31 @@
 #include "nob.h"
 #include "utils.h"
 
-#define SMALL
+#include <inttypes.h>
+
+typedef int64_t i64;
+
+typedef struct {
+    i64 *items;
+    size_t count;
+    size_t capacity;
+} DataLine;
+
+typedef struct {
+    DataLine *items;
+    size_t count;
+    size_t capacity;
+} Data;
+
+static inline bool IsDataLineZeroed(DataLine dl) {
+    for (size_t i = 0; i < dl.count; ++i) {
+        if (dl.items[i])
+            return false;
+    }
+    return true;
+}
+
+// #define SMALL
 int main(int argc, char **argv) {
     int result = 0;
 
@@ -27,11 +51,68 @@ int main(int argc, char **argv) {
 #endif
     }
 
+    Data data             = {};
     Nob_String_Builder sb = {};
     if (!nob_read_entire_file(input, &sb))
         nob_return_defer(1);
 
+    Nob_String_View sv = nob_sv_trim(nob_sb_to_sv(sb));
+    while (sv.count) {
+        Nob_String_View sv2 = nob_sv_trim(nob_sv_chop_by_delim(&sv, '\n'));
+        // nob_log(NOB_INFO, "\"" SV_Fmt "\"", SV_Arg(sv2));
+        DataLine dl = {};
+        while (sv2.count) {
+            sv2   = nob_sv_trim(sv2);
+            i64 n = nob_sv_chop_i64(&sv2);
+            nob_da_append(&dl, n);
+        }
+        nob_da_append(&data, dl);
+    }
+
+    nob_sb_free(sb);
+    memset(&sb, 0, sizeof(sb));
+
+    i64 finalResult = 0;
+    Data ext        = {};
+    for (size_t i = 0; i < data.count; ++i) {
+        // puts("--------------------------------");
+        ext.count = 0;
+        nob_da_append(&ext, data.items[i]);
+        assert(ext.count > 0);
+        DataLine *last = &ext.items[ext.count - 1];
+        while (true) {
+            DataLine dl = {};
+            for (size_t j = 1; j < last->count; ++j) {
+                i64 n = last->items[j] - last->items[j - 1];
+                nob_da_append(&dl, n);
+            }
+            if (IsDataLineZeroed(dl)) {
+                nob_da_free(dl);
+                break;
+            }
+            nob_da_append(&ext, dl);
+            last = &ext.items[ext.count - 1];
+        }
+
+        for (size_t j = ext.count - 1; j > 0; --j) {
+            finalResult += ext.items[j].items[ext.items[j].count - 1];
+        }
+        finalResult += ext.items[0].items[ext.items[0].count - 1];
+
+        for (size_t j = 1; j < ext.count; ++j) {
+            nob_da_free(ext.items[j]);
+        }
+    }
+
+    nob_log(NOB_INFO, "Result: %" PRIi64, finalResult);
+
 defer:
+    for (size_t i = 0; i < data.count; ++i) {
+        nob_da_free(data.items[i]);
+    }
+
+    nob_da_free(data);
+    nob_da_free(ext);
     nob_sb_free(sb);
 
     return result;
