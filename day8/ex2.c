@@ -89,13 +89,13 @@ int main(int argc, char **argv) {
 
         // nob_log(NOB_INFO, "a = " SV_Fmt " b = " SV_Fmt " c = " SV_Fmt, SV_Arg(a), SV_Arg(b), SV_Arg(c));
         memcpy(&n.node, a.data, a.count);
-        assert(n.node.v >= '000' && n.node.v <= 'ZZZ');
+        // assert(n.node.v >= '000' && n.node.v <= 'ZZZ');
 
         memcpy(&n.left, b.data, b.count);
-        assert(n.left.v >= '000' && n.left.v <= 'ZZZ');
+        // assert(n.left.v >= '000' && n.left.v <= 'ZZZ');
 
         memcpy(&n.right, c.data, c.count);
-        assert(n.right.v >= '000' && n.right.v <= 'ZZZ');
+        // assert(n.right.v >= '000' && n.right.v <= 'ZZZ');
 
         nob_da_append(&nodes, n);
     }

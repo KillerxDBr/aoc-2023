@@ -68,13 +68,13 @@ int main(int argc, char **argv) {
 
         // nob_log(NOB_INFO, "a = " SV_Fmt " b = " SV_Fmt " c = " SV_Fmt, SV_Arg(a), SV_Arg(b), SV_Arg(c));
         memcpy(&n.node, a.data, a.count);
-        assert(n.node >= 'AAA' && n.node <= 'ZZZ');
+        // assert(n.node >= 'AAA' && n.node <= 'ZZZ');
 
         memcpy(&n.left, b.data, b.count);
-        assert(n.left >= 'AAA' && n.left <= 'ZZZ');
+        // assert(n.left >= 'AAA' && n.left <= 'ZZZ');
 
         memcpy(&n.right, c.data, c.count);
-        assert(n.right >= 'AAA' && n.right <= 'ZZZ');
+        // assert(n.right >= 'AAA' && n.right <= 'ZZZ');
 
         nob_da_append(&nodes, n);
     }
@@ -84,9 +84,9 @@ int main(int argc, char **argv) {
         nob_log(NOB_INFO, "Node: %s Left: %s Right: %s", (char *)&n.node, (char *)&n.left, (char *)&n.right);
     }
 
-    uint32_t pos  = 'AAA';
+    uint32_t pos  = *(uint32_t*)"AAA";
     size_t nMoves = 0;
-    for (; pos != 'ZZZ'; ++nMoves) {
+    for (; pos != *(uint32_t*)"ZZZ"; ++nMoves) {
         Node n;
         for (size_t j = 0; j < nodes.count; ++j) {
             if (nodes.items[j].node == pos) {
