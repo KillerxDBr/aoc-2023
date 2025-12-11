@@ -161,7 +161,7 @@ int main(int argc, char **argv) {
     FILE *f             = fopen("build/" FLAGS_BIN, "rb");
 
     if (f != NULL) {
-        assert(fread(&flags, sizeof(flags), 1, f) <= 1);
+        assert(fread(&flags, 1, sizeof(flags), f) == sizeof(flags));
         if (flags != (int)small) {
             force_src_only = true;
         }
@@ -192,7 +192,7 @@ int main(int argc, char **argv) {
         nob_cc_obj_output(&cmd, nob_obj);
         nob_cc_define(&cmd, "NOB_IMPLEMENTATION");
         nob_cc_inputs(&cmd, "-xc", "-c", "include/nob.h", "-O2");
-#if !defined(_MSC_VER) || defined(__clang__)
+#if !defined(_WIN32)
         nob_cc_inputs(&cmd, "-fsanitize=undefined,address", "-fno-omit-frame-pointer", "-g");
 #endif
         nob_cc_flags(&cmd);
@@ -208,7 +208,7 @@ int main(int argc, char **argv) {
 
             nob_cc_obj_output(&cmd, utils_obj);
             nob_cc_inputs(&cmd, "-c", "utils.c", "-O2");
-#if !defined(_MSC_VER) || defined(__clang__)
+#if !defined(_WIN32)
             nob_cc_inputs(&cmd, "-fsanitize=undefined,address", "-fno-omit-frame-pointer", "-g");
 #endif
             nob_cc_flags(&cmd);
@@ -244,8 +244,8 @@ int main(int argc, char **argv) {
                 nob_cc_output(&cmd, output);
                 nob_cc_inputs(&cmd, srcFile, nob_obj, utils_obj);
                 nob_cc_include(&cmd, "include/");
-#if !defined(_MSC_VER) || defined(__clang__)
-                nob_cc_inputs(&cmd, "-fsanitize=undefined,address", "-fno-omit-frame-pointer", "-g", "-Og");
+#if !defined(_WIN32)
+                nob_cc_inputs(&cmd, "-fsanitize=undefined,address", "-fno-omit-frame-pointer", "-g");
 #endif
                 nob_cc_flags(&cmd);
                 if (small) {
