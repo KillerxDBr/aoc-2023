@@ -27,6 +27,16 @@ typedef struct {
     size_t capacity;
 } nvArr;
 
+// Recursive function to return gcd of a and b
+static inline uint64_t gcd(uint64_t a, uint64_t b) {
+    if (b == 0)
+        return a;
+    return gcd(b, a % b);
+}
+
+// Function to return LCM of two numbers
+static inline uint64_t lcm(uint64_t a, uint64_t b) { return (a / gcd(a, b)) * b; }
+
 // #define SMALL
 int main(int argc, char **argv) {
     int result = 0;
@@ -106,34 +116,30 @@ int main(int argc, char **argv) {
         nob_log(NOB_INFO, "start pos: %s", pos.items[i].c);
     }
 
-    size_t end    = 0;
-    size_t nMoves = 0;
-    for (; end != pos.count; ++nMoves) {
-        nob_log(NOB_INFO, "Moves: %zu", nMoves);
-        end = 0;
-        for (size_t i = 0; i < pos.count; ++i) {
-            NodeValue p = pos.items[i];
-            for (size_t j = 0; j < nodes.count; ++j) {
-                if (nodes.items[j].node.v == p.v) {
-                    switch (instructions.data[nMoves % instructions.count]) {
-                    case 'R':
-                        // printf("Right\n");
-                        p = nodes.items[j].right;
-                        break;
-                    case 'L':
-                        // printf("Left\n");
-                        p = nodes.items[j].left;
-                        break;
-                    default:
-                        NOB_UNREACHABLE("Invalid Instruction");
-                        break;
-                    }
+    uint64_t nMoves = 1;
+    for (size_t i = 0; i < pos.count; ++i) {
+        uint64_t nodeMove = 0;
+        NodeValue n       = pos.items[i];
+        while (n.c[2] != 'Z') {
+            for (size_t j = 0; nodes.count; ++j) {
+                if (n.v != nodes.items[j].node.v)
+                    continue;
+                switch (instructions.data[nodeMove % instructions.count]) {
+                case 'R':
+                    n = nodes.items[j].right;
+                    break;
+                case 'L':
+                    n = nodes.items[j].left;
+                    break;
+                default:
+                    NOB_UNREACHABLE("Invalid Instruction");
                     break;
                 }
+                nodeMove++;
+                break;
             }
-            pos.items[i] = p;
-            end += (pos.items[i].c[2] == 'Z');
         }
+        nMoves = lcm(nMoves, nodeMove);
     }
 
     nob_log(NOB_INFO, "Found destination in %zu steps", nMoves);
