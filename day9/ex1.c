@@ -28,8 +28,6 @@ static inline bool IsDataLineZeroed(DataLine dl) {
 
 // #define SMALL
 int main(int argc, char **argv) {
-    int result = 0;
-
     const char *input = NULL;
     if (argc > 1)
         input = argv[1];
@@ -52,15 +50,15 @@ int main(int argc, char **argv) {
     }
 
     Data data             = {};
+    DataLine dl           = {};
     Nob_String_Builder sb = {};
     if (!nob_read_entire_file(input, &sb))
-        nob_return_defer(1);
+        return 1;
 
     Nob_String_View sv = nob_sv_trim(nob_sb_to_sv(sb));
     while (sv.count) {
         Nob_String_View sv2 = nob_sv_trim(nob_sv_chop_by_delim(&sv, '\n'));
-        // nob_log(NOB_INFO, "\"" SV_Fmt "\"", SV_Arg(sv2));
-        DataLine dl = {};
+        memset(&dl, 0, sizeof(dl));
         while (sv2.count) {
             sv2   = nob_sv_trim(sv2);
             i64 n = nob_sv_chop_i64(&sv2);
@@ -81,7 +79,7 @@ int main(int argc, char **argv) {
         assert(ext.count > 0);
         DataLine *last = &ext.items[ext.count - 1];
         while (true) {
-            DataLine dl = {};
+            memset(&dl, 0, sizeof(dl));
             for (size_t j = 1; j < last->count; ++j) {
                 i64 n = last->items[j] - last->items[j - 1];
                 nob_da_append(&dl, n);
@@ -94,26 +92,17 @@ int main(int argc, char **argv) {
             last = &ext.items[ext.count - 1];
         }
 
-        for (size_t j = ext.count - 1; j > 0; --j) {
+        for (size_t j = 0; j < ext.count; ++j) {
             finalResult += ext.items[j].items[ext.items[j].count - 1];
-        }
-        finalResult += ext.items[0].items[ext.items[0].count - 1];
-
-        for (size_t j = 1; j < ext.count; ++j) {
             nob_da_free(ext.items[j]);
         }
     }
 
     nob_log(NOB_INFO, "Result: %" PRIi64, finalResult);
 
-defer:
-    for (size_t i = 0; i < data.count; ++i) {
-        nob_da_free(data.items[i]);
-    }
-
-    nob_da_free(data);
     nob_da_free(ext);
+    nob_da_free(data);
     nob_sb_free(sb);
 
-    return result;
+    return 0;
 }
