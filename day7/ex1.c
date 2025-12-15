@@ -38,7 +38,6 @@ typedef struct {
 
 void addValue(char *s, char ch, size_t len);
 
-// #define SMALL
 int sort_tokens(const void *a, const void *b) {
     //    return (*(int*)a - *(int*)b);
     return (((Token *)b)->count - ((Token *)a)->count);
@@ -67,26 +66,8 @@ int sort_ranks(const void *a, const void *b) {
 int main(int argc, char **argv) {
     int result = 0;
 
-    const char *input;
-    if (argc > 1)
-        input = argv[1];
-    else {
-        char *fullPath = GetFullPath(__FILE__, NULL, 0);
-        if (fullPath != NULL) {
-            fullPath[nob_path_name(fullPath) - fullPath] = '\0';
-            if (!nob_set_current_dir(fullPath)) {
-                return 1;
-            }
-
-            free(fullPath);
-        }
-
-#ifdef SMALL
-        input = "small.txt";
-#else
-        input = "input.txt";
-#endif
-    }
+    const char *input = ProcessInput(argc, argv, __FILE__);
+    assert(input != NULL);
 
     Nob_String_Builder sb = {};
     if (!nob_read_entire_file(input, &sb))

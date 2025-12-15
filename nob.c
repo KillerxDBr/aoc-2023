@@ -156,18 +156,6 @@ int main(int argc, char **argv) {
         }
     }
 
-    int flags           = 0;
-    bool force_src_only = false;
-    FILE *f             = fopen("build/" FLAGS_BIN, "rb");
-
-    if (f != NULL) {
-        assert(fread(&flags, 1, sizeof(flags), f) == sizeof(flags));
-        if (flags != (int)small) {
-            force_src_only = true;
-        }
-        fclose(f);
-    }
-
     if (clear) {
         if (file_exists("build/") > 0) {
             File_Paths fp = {};
@@ -208,6 +196,7 @@ int main(int argc, char **argv) {
 
             nob_cc_obj_output(&cmd, utils_obj);
             nob_cc_inputs(&cmd, "-c", "utils.c", "-O2");
+            nob_cc_include(&cmd, "include/");
 #if !defined(_WIN32)
             nob_cc_inputs(&cmd, "-fsanitize=undefined,address", "-fno-omit-frame-pointer", "-g");
 #endif
@@ -217,9 +206,6 @@ int main(int argc, char **argv) {
                 return_defer(1);
         }
     }
-
-    if (force_src_only) // only force rebuild of source files
-        force = true;
 
     char folder[32];
     for (int day = 1; true; ++day) {
@@ -248,10 +234,6 @@ int main(int argc, char **argv) {
                 nob_cc_inputs(&cmd, "-fsanitize=undefined,address", "-fno-omit-frame-pointer", "-g");
 #endif
                 nob_cc_flags(&cmd);
-                if (small) {
-                    nob_cc_define(&cmd, "SMALL");
-                }
-
                 cmd_run(&cmd, .async = &procs);
             }
         }
@@ -270,26 +252,27 @@ int main(int argc, char **argv) {
                 const char *exe = exe_fmt(day, ex);
                 if (file_exists(exe) < 1)
                     continue;
-                // const char *arg = temp_sprintf("day%d/input.txt", day);
-                // nob_cmd_append(&cmd, exe, arg);
+
                 nob_cmd_append(&cmd, exe);
+                if (small) {
+                    nob_cmd_append(&cmd, "-s");
+                }
+                nob_log(NOB_INFO, "====================================================");
                 if (!cmd_run(&cmd)) {
                     nob_da_append(&fp, exe);
                 }
             }
         }
 
-        for (size_t i = 0; i < fp.count; ++i)
-            nob_log(NOB_ERROR, "%s failed to Execute", fp.items[i]);
-
+        nob_log(NOB_INFO, "====================================================");
+        nob_log(NOB_INFO, "End of Execution");
+        if (!fp.count) {
+            nob_log(NOB_INFO, "OK...");
+        } else {
+            for (size_t i = 0; i < fp.count; ++i)
+                nob_log(NOB_ERROR, "%s failed to Execute", fp.items[i]);
+        }
         nob_da_free(fp);
-    }
-
-    f = fopen("build/" FLAGS_BIN, "wb");
-    if (f != NULL) {
-        flags = (int)small;
-        assert(fwrite(&flags, sizeof(flags), 1, f) == 1);
-        fclose(f);
     }
 
 defer:

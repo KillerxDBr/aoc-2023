@@ -37,30 +37,11 @@ static inline uint64_t gcd(uint64_t a, uint64_t b) {
 // Function to return LCM of two numbers
 static inline uint64_t lcm(uint64_t a, uint64_t b) { return (a / gcd(a, b)) * b; }
 
-// #define SMALL
 int main(int argc, char **argv) {
     int result = 0;
 
-    const char *input = NULL;
-    if (argc > 1)
-        input = argv[1];
-    else {
-        char *fullPath = GetFullPath(__FILE__, NULL, 0);
-        if (fullPath != NULL) {
-            fullPath[nob_path_name(fullPath) - fullPath] = '\0';
-            if (!nob_set_current_dir(fullPath)) {
-                return 1;
-            }
-
-            free(fullPath);
-        }
-
-#ifdef SMALL
-        input = "small.txt";
-#else
-        input = "input.txt";
-#endif
-    }
+    const char *input = ProcessInput(argc, argv, __FILE__);
+    assert(input != NULL);
 
     nvArr pos   = {};
     Nodes nodes = {};

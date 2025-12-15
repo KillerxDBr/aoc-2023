@@ -22,56 +22,31 @@ typedef struct {
     size_t capacity;
 } Strings;
 
-// #define SMALL
-#if SMALL
-#define LINE_SIZE 48
-#else
-#define LINE_SIZE 116
-#endif
-
 int main(int argc, char **argv) {
-    const char *input;
-    if (argc > 1)
-        input = argv[1];
-    else {
-        char *fullPath = GetFullPath(__FILE__, NULL, 0);
-        if (fullPath != NULL) {
-            fullPath[nob_path_name(fullPath) - fullPath] = '\0';
-            if (!nob_set_current_dir(fullPath)) {
-                return 1;
-            }
+    const char *input = ProcessInput(argc, argv, __FILE__);
+    assert(input != NULL);
 
-            free(fullPath);
-        }
-
-#ifdef SMALL
-        input = "small.txt";
-#else
-        input = "input.txt";
-#endif
-    }
-    FILE *fd = fopen(input, "rb");
-    if (fd == NULL) {
-        fprintf(stderr, "[ERROR] Couldn't open file '%s': %s\n", input, strerror(errno));
+    Nob_String_View sv;
+    Nob_String_Builder sb = {};
+    if (!nob_read_entire_file(input, &sb))
         return 1;
-    }
+
+    sv = nob_sv_trim(nob_sb_to_sv(sb));
 
     Strings strings        = {};
     Numbers yourNumbers    = {};
     Numbers winningNumbers = {};
     Numbers result         = {};
 
-    char *tmp = malloc(256);
-    while (fgets(tmp, 255, fd) != NULL) {
-        tmp[LINE_SIZE] = 0;
-        tmp            = realloc(tmp, strlen(tmp) + 1);
-        nob_da_append(&strings, tmp);
-        tmp = malloc(256);
+    while (sv.count) {
+        Nob_String_View sv2 = nob_sv_trim(nob_sv_chop_by_delim(&sv, '\n'));
+        char *str           = KxD_strndup(sv2.data, sv2.count);
+        assert(str != NULL);
+        nob_da_append(&strings, str);
     }
-    fclose(fd);
-    free(tmp);
 
-    char *sep = NULL;
+    nob_sb_free(sb);
+
     size_t n;
     size_t wsize = 0;
     size_t ysize = 0;
@@ -79,8 +54,12 @@ int main(int argc, char **argv) {
         wsize = 0;
         ysize = 0;
 
-        tmp = strchr(strings.items[i], ':');
-        sep = strchr(strings.items[i], '|');
+        char *tmp = strchr(strings.items[i], ':');
+        char *sep = strchr(strings.items[i], '|');
+
+        assert(tmp != NULL);
+        assert(sep != NULL);
+
         tmp++;
 
         while (tmp < sep - 1 && tmp != NULL) {

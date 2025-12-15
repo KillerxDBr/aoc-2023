@@ -2,6 +2,8 @@
 #include "nob.h"
 #include "utils.h"
 
+#include <inttypes.h>
+
 #define DA_ARRAY(name, dtype)                                                                                          \
     typedef struct {                                                                                                   \
         dtype *items;                                                                                                  \
@@ -11,11 +13,11 @@
 DA_ARRAY(Strings, char *);
 
 typedef struct {
-    size_t dest, src, len;
+    uint64_t dest, src, len;
 } Range;
 
 typedef struct {
-    size_t start, range;
+    uint64_t start, range;
 } Seed;
 
 // typedef struct {
@@ -34,9 +36,8 @@ DA_ARRAY(Seeds, Seed);
 // DA_ARRAY(Mappings, Mapping);
 
 void parseSeeds(Nob_String_View sv, Seeds *seeds);
-size_t parseRange(Strings *strings, Ranges *arrRange, size_t index);
 void parseRange2(Nob_String_View sv, Ranges *arrRange);
-size_t checkRange(size_t n, Ranges *ranges);
+uint64_t checkRange(uint64_t n, Ranges *ranges);
 
 const char *labels[] = {
     "seeds: ",
@@ -64,36 +65,10 @@ typedef enum {
 #define min(a, b) (((a) < (b)) ? (a) : (b))
 #endif
 
-// #define SMALL
+#define ST_FMT "%010" PRIu64
 int main(int argc, char **argv) {
-    const char *input;
-    if (argc > 1)
-        input = argv[1];
-    else {
-        char *fullPath = GetFullPath(__FILE__, NULL, 0);
-        if (fullPath != NULL) {
-            fullPath[nob_path_name(fullPath) - fullPath] = '\0';
-            if (!nob_set_current_dir(fullPath)) {
-                return 1;
-            }
-
-            free(fullPath);
-        }
-
-#ifdef SMALL
-        input = "small.txt";
-#else
-        input = "input.txt";
-#endif
-    }
-
-#ifdef SMALL
-    // const char *input = "small.txt";
-#define ST_FMT "%02zu"
-#else
-    // const char *input = "input.txt";
-#define ST_FMT "%010zu"
-#endif
+    const char *input = ProcessInput(argc, argv, __FILE__);
+    assert(input != NULL);
 
     int result            = 0;
     Strings strings       = {};
@@ -265,8 +240,8 @@ int main(int argc, char **argv) {
 
     fflush(stdout);
 
-    size_t n;
-    size_t lowestLocation = (size_t)-1;
+    uint64_t n;
+    uint64_t lowestLocation = (size_t)-1;
 
     for (size_t i = 0; i < seeds.count; ++i) {
         n = 0;
@@ -301,7 +276,7 @@ int main(int argc, char **argv) {
     // fflush(stdout);
 
     printf("Final Result ------------------------\n");
-    printf("Lowest Location Number: %zu\n", lowestLocation);
+    printf("Lowest Location Number: %" PRIu64 "\n", lowestLocation);
     fflush(stdout);
 
 defer:
@@ -323,17 +298,6 @@ defer:
     nob_sb_free(sb);
 
     return result;
-}
-
-size_t parseRange(Strings *strings, Ranges *arrRange, size_t index) {
-    index++;
-    Range range = {};
-    while (index < strings->count && strlen(strings->items[index]) != 0) {
-        sscanf(strings->items[index], "%zu %zu %zu", &range.dest, &range.src, &range.len);
-        nob_da_append(arrRange, range);
-        index++;
-    }
-    return index;
 }
 
 void parseRange2(Nob_String_View sv, Ranges *arrRange) {
@@ -359,7 +323,7 @@ void parseSeeds(Nob_String_View sv, Seeds *seeds) {
     }
 }
 
-size_t checkRange(size_t n, Ranges *ranges) {
+uint64_t checkRange(uint64_t n, Ranges *ranges) {
     for (size_t i = 0; i < ranges->count; ++i) {
         Range r = ranges->items[i];
         if ((n >= r.src) && (n <= (r.src + r.len - 1))) {

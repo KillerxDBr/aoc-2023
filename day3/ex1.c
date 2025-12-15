@@ -36,44 +36,22 @@ typedef struct {
 } Nodes;
 
 int main(int argc, char **argv) {
-    const char *input;
-    if (argc > 1)
-        input = argv[1];
-    else {
-        char *fullPath = GetFullPath(__FILE__, NULL, 0);
-        if (fullPath != NULL) {
-            fullPath[nob_path_name(fullPath) - fullPath] = '\0';
-            if (!nob_set_current_dir(fullPath)) {
-                return 1;
-            }
+    const char *input = ProcessInput(argc, argv, __FILE__);
+    assert(input != NULL);
 
-            free(fullPath);
-        }
-
-#ifdef SMALL
-        input = "small.txt";
-#else
-        input = "input.txt";
-#endif
-    }
-
-    FILE *fd = fopen(input, "rb");
-    if (fd == NULL) {
-        fprintf(stderr, "[ERROR] Couldn't open file '%s': %s\n", input, strerror(errno));
+    Nob_String_View sv;
+    Nob_String_Builder sb = {};
+    if (!nob_read_entire_file(input, &sb))
         return 1;
-    }
 
     str strings = {};
-    char *tmp   = malloc(256);
-    while (fgets(tmp, 255, fd) != NULL) {
-        tmp[255] = 0;
-        tmp      = realloc(tmp, strlen(tmp) + 1);
-        nob_da_append(&strings, tmp);
-        tmp = malloc(256);
+    sv          = nob_sv_trim(nob_sb_to_sv(sb));
+    while (sv.count) {
+        Nob_String_View sv2 = nob_sv_trim(nob_sv_chop_by_delim(&sv, '\n'));
+        char *str           = KxD_strndup(sv2.data, sv2.count);
+        assert(str != NULL);
+        nob_da_append(&strings, str);
     }
-
-    free(tmp);
-    fclose(fd);
 
     Nodes digits  = {};
     Nodes symbles = {};
@@ -117,7 +95,7 @@ int main(int argc, char **argv) {
 
     size_t soma = 0;
 
-    Nob_String_Builder sb = {};
+    sb.count = 0;
     for (size_t i = 0; i < symbles.count; i++) {
         node_t *prevHead = NULL;
         for (int j = -1; j < 2; j++) {

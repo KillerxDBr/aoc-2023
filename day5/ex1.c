@@ -63,36 +63,10 @@ typedef enum {
 #define min(a, b) (((a) < (b)) ? (a) : (b))
 #endif
 
-// #define SMALL
-int main(int argc, char **argv) {
-    const char *input;
-    if (argc > 1)
-        input = argv[1];
-    else {
-        char *fullPath = GetFullPath(__FILE__, NULL, 0);
-        if (fullPath != NULL) {
-            fullPath[nob_path_name(fullPath) - fullPath] = '\0';
-            if (!nob_set_current_dir(fullPath)) {
-                return 1;
-            }
-
-            free(fullPath);
-        }
-
-#ifdef SMALL
-        input = "small.txt";
-#else
-        input = "input.txt";
-#endif
-    }
-
-#ifdef SMALL
-    // const char *input = "small.txt";
-#define ST_FMT "%02zu"
-#else
-    // const char *input = "input.txt";
 #define ST_FMT "%010zu"
-#endif
+int main(int argc, char **argv) {
+    const char *input = ProcessInput(argc, argv, __FILE__);
+    assert(input != NULL);
 
     int result            = 0;
     Strings strings       = {};
@@ -111,14 +85,9 @@ int main(int argc, char **argv) {
         if (sv2.count == 0)
             continue;
 
-        char *tmp = malloc(sv2.count + 1);
+        char *tmp = KxD_strndup(sv2.data, sv2.count);
         if (tmp == NULL) {
             nob_log(NOB_ERROR, "Could not allocate memory: %s", strerror(errno));
-            nob_return_defer(1);
-        }
-        // memcpy(tmp, sv2.data, sv2.count);
-        if ((size_t)sprintf(tmp, SV_Fmt, SV_Arg(sv2)) != sv2.count) {
-            nob_log(NOB_ERROR, "Could not copy string: %s", strerror(errno));
             nob_return_defer(1);
         }
         nob_da_append(&strings, tmp);

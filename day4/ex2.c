@@ -29,58 +29,28 @@ void updateStrings(Strings *strings, size_t ysize, size_t wsize, Numbers *yourNu
 
 size_t originalSize;
 
-// #define SMALL
-#define BUFFER_SIZE 256
-
-#ifdef _WIN32
-static const char *strndup(const char *str, size_t n) {
-    const char *rst = calloc(n + 1, 1);
-    assert(rst != NULL);
-    memcpy((void *)rst, str, n);
-    return rst;
-}
-#endif
-
 int main(int argc, char **argv) {
     const char *separator = "===================";
 
-    const char *input;
-    if (argc > 1)
-        input = argv[1];
-    else {
-        char *fullPath = GetFullPath(__FILE__, NULL, 0);
-        if (fullPath != NULL) {
-            fullPath[nob_path_name(fullPath) - fullPath] = '\0';
-            if (!nob_set_current_dir(fullPath)) {
-                return 1;
-            }
+    const char *input = ProcessInput(argc, argv, __FILE__);
+    assert(input != NULL);
 
-            free(fullPath);
-        }
-
-#ifdef SMALL
-        input = "small.txt";
-#else
-        input = "input.txt";
-#endif
-    }
-
-    Nob_String_Builder sb   = {};
-    Nob_String_View content = {};
+    Nob_String_View sv;
+    Nob_String_Builder sb = {};
     if (!nob_read_entire_file(input, &sb))
         return 1;
 
-    content = nob_sv_trim(nob_sb_to_sv(sb));
+    sv = nob_sv_trim(nob_sb_to_sv(sb));
 
     Strings strings        = {};
     Numbers yourNumbers    = {};
     Numbers winningNumbers = {};
     Numbers result         = {};
 
-    while (content.count) {
-        Nob_String_View sv2 = nob_sv_trim(nob_sv_chop_by_delim(&content, '\n'));
-        const char *str     = strndup(sv2.data, sv2.count);
-        // const char *str = nob_temp_sv_to_cstr(sv2);
+    while (sv.count) {
+        Nob_String_View sv2 = nob_sv_trim(nob_sv_chop_by_delim(&sv, '\n'));
+        const char *str     = KxD_strndup(sv2.data, sv2.count);
+        assert(str != NULL);
         nob_da_append(&strings, str);
     }
 
