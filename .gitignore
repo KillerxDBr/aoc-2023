@@ -102,3 +102,4 @@ ex1
 ex2
 test.c
 build/
+*.txt
