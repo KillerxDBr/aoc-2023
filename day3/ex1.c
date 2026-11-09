@@ -41,8 +41,7 @@ int main(int argc, char **argv) {
 
     Nob_String_View sv;
     Nob_String_Builder sb = {};
-    if (!nob_read_entire_file(input, &sb))
-        return 1;
+    if (!nob_read_entire_file(input, &sb)) return 1;
 
     str strings = {};
     sv          = nob_sv_trim(nob_sb_to_sv(sb));

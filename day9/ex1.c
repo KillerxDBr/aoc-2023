@@ -20,8 +20,7 @@ typedef struct {
 
 static inline bool IsDataLineZeroed(DataLine dl) {
     for (size_t i = 0; i < dl.count; ++i) {
-        if (dl.items[i])
-            return false;
+        if (dl.items[i]) return false;
     }
     return true;
 }
@@ -33,8 +32,7 @@ int main(int argc, char **argv) {
     Data data             = {};
     DataLine dl           = {};
     Nob_String_Builder sb = {};
-    if (!nob_read_entire_file(input, &sb))
-        return 1;
+    if (!nob_read_entire_file(input, &sb)) return 1;
 
     Nob_String_View sv = nob_sv_trim(nob_sb_to_sv(sb));
     while (sv.count) {

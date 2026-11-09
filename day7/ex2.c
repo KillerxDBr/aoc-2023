@@ -39,18 +39,17 @@ typedef struct {
 int sort_tokens(const void *a, const void *b) { return (((Token *)b)->count - ((Token *)a)->count); }
 
 int sort_ranks(const void *a, const void *b) {
-    Hand h1 = *(Hand *)b;
-    Hand h2 = *(Hand *)a;
+    Hand *h1 = (Hand *)b;
+    Hand *h2 = (Hand *)a;
     // printf("----------------------------\n");
     // printf("h1 -> " SV_Fmt "\nh2 ->" SV_Fmt "\n", 5, h1.cards, 5, h2.cards);
 
-    int result = h1.type - h2.type;
+    int result = h1->type - h2->type;
 
     if (result == 0) {
         for (size_t i = 0; i < 5; ++i) {
-            result = strchr(cards, h1.cards[i]) - strchr(cards, h2.cards[i]);
-            if (result != 0)
-                break;
+            result = strchr(cards, h1->cards[i]) - strchr(cards, h2->cards[i]);
+            if (result != 0) break;
         }
         // printf("Result: %d\n", result);
     }
@@ -75,8 +74,7 @@ int main(int argc, char **argv) {
     assert(input != NULL);
 
     Nob_String_Builder sb = {};
-    if (!nob_read_entire_file(input, &sb))
-        nob_return_defer(1);
+    if (!nob_read_entire_file(input, &sb)) nob_return_defer(1);
 
     Hand h                 = {};
     Hands hands            = {};
@@ -109,14 +107,12 @@ int main(int argc, char **argv) {
             uint8_t count = 1;
             assert(strchr(cards, c) != NULL);
 
-            if (memchr(cs, c, 5))
-                continue;
+            if (memchr(cs, c, 5)) continue;
 
             addValue(cs, c, sizeof(cs));
 
             for (size_t k = j + 1; k < 5; ++k)
-                if (c == h.cards[k])
-                    count++;
+                if (c == h.cards[k]) count++;
 
             assert(count <= 5);
             h.tokens[j].c     = c;
@@ -143,8 +139,7 @@ int main(int argc, char **argv) {
                 if (index < h.ntok) {
                     // printf("starting index: %u (%c)\n", index, h.tokens[index].c);
                     for (size_t j = index + 1; j < h.ntok; ++j) {
-                        if (h.tokens[j].c == 'J')
-                            continue;
+                        if (h.tokens[j].c == 'J') continue;
                         if (h.tokens[j].count > h.tokens[index].count) {
                             index = j;
                         }
@@ -233,8 +228,7 @@ int main(int argc, char **argv) {
         printf("Bid: %zu\n", h.bid);
 
         for (size_t j = 0; j < 5; ++j) {
-            if (!h.tokens[j].count)
-                break;
+            if (!h.tokens[j].count) break;
             printf("'%c' -> %d %s\n", h.tokens[j].c, h.tokens[j].count, (h.tokens[j].count > 1) ? "times" : "time");
         }
 

@@ -25,8 +25,7 @@ int main(int argc, char **argv) {
     assert(input != NULL);
 
     Nob_String_Builder sb = {};
-    if (!nob_read_entire_file(input, &sb))
-        return 1;
+    if (!nob_read_entire_file(input, &sb)) return 1;
 
     // char line[256];
     Nob_String_View sv = nob_sv_trim(nob_sb_to_sv(sb));

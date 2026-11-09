@@ -9,9 +9,7 @@ int main(int argc, char **argv) {
     const char *input = ProcessInput(argc, argv, __FILE__);
     assert(input != NULL);
 
-    if (!nob_read_entire_file(input, &sb)) {
-        return 1;
-    }
+    if (!nob_read_entire_file(input, &sb)) return 1;
 
     Nob_String_View content = nob_sv_trim(nob_sb_to_sv(sb));
     Nob_String_View line;
@@ -24,8 +22,7 @@ int main(int argc, char **argv) {
         line = nob_sv_trim(nob_sv_chop_by_delim(&content, '\n'));
         for (size_t i = 0; i < line.count; ++i) {
             if (isdigit(line.data[i])) {
-                if (fdigit == 0)
-                    fdigit = line.data[i] - '0';
+                if (fdigit == 0) fdigit = line.data[i] - '0';
                 ldigit = line.data[i] - '0';
             }
         }

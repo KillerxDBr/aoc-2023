@@ -29,8 +29,7 @@ typedef struct {
 
 // Recursive function to return gcd of a and b
 static inline uint64_t gcd(uint64_t a, uint64_t b) {
-    if (b == 0)
-        return a;
+    if (b == 0) return a;
     return gcd(b, a % b);
 }
 
@@ -47,8 +46,7 @@ int main(int argc, char **argv) {
     Nodes nodes = {};
 
     Nob_String_Builder sb = {};
-    if (!nob_read_entire_file(input, &sb))
-        nob_return_defer(1);
+    if (!nob_read_entire_file(input, &sb)) nob_return_defer(1);
 
     Nob_String_View sv           = nob_sv_trim(nob_sb_to_sv(sb));
     Nob_String_View instructions = nob_sv_trim(nob_sv_chop_by_delim(&sv, '\n'));
@@ -103,8 +101,7 @@ int main(int argc, char **argv) {
         NodeValue n       = pos.items[i];
         while (n.c[2] != 'Z') {
             for (size_t j = 0; nodes.count; ++j) {
-                if (n.v != nodes.items[j].node.v)
-                    continue;
+                if (n.v != nodes.items[j].node.v) continue;
                 switch (instructions.data[nodeMove % instructions.count]) {
                 case 'R':
                     n = nodes.items[j].right;

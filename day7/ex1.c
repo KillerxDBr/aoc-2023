@@ -44,18 +44,17 @@ int sort_tokens(const void *a, const void *b) {
 }
 
 int sort_ranks(const void *a, const void *b) {
-    Hand h1 = *(Hand *)b;
-    Hand h2 = *(Hand *)a;
+    Hand *h1 = (Hand *)b;
+    Hand *h2 = (Hand *)a;
     // printf("----------------------------\n");
     // printf("h1 -> " SV_Fmt "\nh2 ->" SV_Fmt "\n", 5, h1.cards, 5, h2.cards);
 
-    int result = h1.type - h2.type;
+    int result = h1->type - h2->type;
 
     if (result == 0) {
         for (size_t i = 0; i < 5; ++i) {
-            result = strchr(cards, h1.cards[i]) - strchr(cards, h2.cards[i]);
-            if (result != 0)
-                break;
+            result = strchr(cards, h1->cards[i]) - strchr(cards, h2->cards[i]);
+            if (result != 0) break;
         }
         // printf("Result: %d\n", result);
     }
@@ -70,8 +69,7 @@ int main(int argc, char **argv) {
     assert(input != NULL);
 
     Nob_String_Builder sb = {};
-    if (!nob_read_entire_file(input, &sb))
-        nob_return_defer(1);
+    if (!nob_read_entire_file(input, &sb)) nob_return_defer(1);
 
     Hand h                 = {};
     Hands hands            = {};
@@ -104,14 +102,12 @@ int main(int argc, char **argv) {
             uint8_t count = 0;
             assert(strchr(cards, c) != NULL);
 
-            if (memchr(cs, c, 5))
-                continue;
+            if (memchr(cs, c, 5)) continue;
 
             addValue(cs, c, sizeof(cs));
 
             for (size_t k = j; k < 5; ++k)
-                if (c == h.cards[k])
-                    count++;
+                if (c == h.cards[k]) count++;
 
             assert(count <= 5);
             h.tokens[j].c     = c;
@@ -139,8 +135,7 @@ int main(int argc, char **argv) {
                 h.type = THREE_KIND;
             } else if ((h.tokens[0].count == 2) && (h.tokens[1].count == 2)) { // Two pair -> 23432
                 h.type = TWO_PAIR;
-            } else
-                NOB_UNREACHABLE("switch(h.ntok) case 3");
+            } else NOB_UNREACHABLE("switch(h.ntok) case 3");
             break;
         case 2:
             if ((h.tokens[0].count == 3) && (h.tokens[1].count == 2)) { // Full House -> 23332
@@ -178,8 +173,7 @@ int main(int argc, char **argv) {
         printf("Bid: %zu\n", h.bid);
 
         for (size_t j = 0; j < 5; ++j) {
-            if (!h.tokens[j].count)
-                break;
+            if (!h.tokens[j].count) break;
             printf("'%c' -> %d %s\n", h.tokens[j].c, h.tokens[j].count, (h.tokens[j].count > 1) ? "times" : "time");
         }
 

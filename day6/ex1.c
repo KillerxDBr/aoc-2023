@@ -15,13 +15,12 @@ typedef struct {
 } intArr;
 
 int main(int argc, char **argv) {
-    int result = 0;
+    int result        = 0;
     const char *input = ProcessInput(argc, argv, __FILE__);
     assert(input != NULL);
 
     Nob_String_Builder sb = {};
-    if (!nob_read_entire_file(input, &sb))
-        return 1;
+    if (!nob_read_entire_file(input, &sb)) return 1;
 
     Nob_String_View sv = nob_sb_to_sv(sb);
 
@@ -75,8 +74,7 @@ int main(int argc, char **argv) {
             int dt = vel * (t - vel);
             // printf("vel: %d\n", vel);
             // printf("result: %d\n", dt);
-            if (dt > d)
-                rst++;
+            if (dt > d) rst++;
         }
         printf("Corrida[%zu]: %zu\n", i + 1, rst);
         finalResult *= rst;

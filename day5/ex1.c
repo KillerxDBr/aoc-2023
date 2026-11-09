@@ -82,8 +82,7 @@ int main(int argc, char **argv) {
     // Nob_String_View sv2;
     while (sv.count > 0) {
         Nob_String_View sv2 = nob_sv_trim(nob_sv_chop_by_delim(&sv, '\n'));
-        if (sv2.count == 0)
-            continue;
+        if (sv2.count == 0) continue;
 
         char *tmp = KxD_strndup(sv2.data, sv2.count);
         if (tmp == NULL) {

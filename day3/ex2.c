@@ -35,8 +35,7 @@ int main(int argc, char **argv) {
 
     Nob_String_View sv;
     Nob_String_Builder sb = {};
-    if (!nob_read_entire_file(input, &sb))
-        return 1;
+    if (!nob_read_entire_file(input, &sb)) return 1;
 
     str strings = {};
     sv          = nob_sv_trim(nob_sb_to_sv(sb));
@@ -107,8 +106,7 @@ int main(int argc, char **argv) {
                     bool counting = false;
                     while (ptr != NULL) {
                         if (ptr->pos.x == nx && ptr->pos.y == ny) {
-                            if (countedNumbers[l])
-                                break;
+                            if (countedNumbers[l]) break;
                             countedNumbers[l] = true;
                             counting          = true;
                         }

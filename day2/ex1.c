@@ -30,8 +30,7 @@ int main(int argc, char **argv) {
     assert(input != NULL);
 
     Nob_String_Builder sb = {};
-    if (!nob_read_entire_file(input, &sb))
-        return 1;
+    if (!nob_read_entire_file(input, &sb)) return 1;
 
     Nob_String_View sv = nob_sv_trim(nob_sb_to_sv(sb));
     Cubes cubes        = {};
@@ -47,18 +46,15 @@ int main(int argc, char **argv) {
         calcCubes(&c, line);
         // puts("calcCubes OK!");
         printf("==========\n Cube: %zu\n    Id:%zu\n    Plays: %zu\n", cubes.count + 1, c.id, c.plays);
-        if (c.notValid)
-            printf("    Cube %zu is not valid\n", cubes.count + 1);
-        else
-            printf("    Cube %zu is valid\n", cubes.count + 1);
+        if (c.notValid) printf("    Cube %zu is not valid\n", cubes.count + 1);
+        else printf("    Cube %zu is valid\n", cubes.count + 1);
         nob_da_append(&cubes, c);
     }
 
     puts("==========\nCalculando: ");
     size_t soma = 0;
     for (size_t i = 0; i < cubes.count; i++) {
-        if (cubes.items[i].id == 0)
-            continue;
+        if (cubes.items[i].id == 0) continue;
 
         if (!cubes.items[i].notValid) {
             soma += cubes.items[i].id;
@@ -87,8 +83,7 @@ size_t getId(const char *line) {
 size_t getPlays(const char *line) {
     size_t i = 0, rst = 0;
     while (line[i] != 0) {
-        if (line[i] == ';')
-            rst++;
+        if (line[i] == ';') rst++;
         i++;
     }
     return rst + 1;

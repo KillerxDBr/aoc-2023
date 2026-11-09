@@ -28,8 +28,7 @@ int main(int argc, char **argv) {
 
     Nob_String_View sv;
     Nob_String_Builder sb = {};
-    if (!nob_read_entire_file(input, &sb))
-        return 1;
+    if (!nob_read_entire_file(input, &sb)) return 1;
 
     sv = nob_sv_trim(nob_sb_to_sv(sb));
 
@@ -97,12 +96,9 @@ int main(int argc, char **argv) {
 
             for (size_t l = 0; l < ysize; l++) {
                 yn = yourNumbers.items[l + ysize * i];
-                if (yn != wn)
-                    continue;
-                if (tmpSoma == 0)
-                    tmpSoma++;
-                else
-                    tmpSoma *= 2;
+                if (yn != wn) continue;
+                if (tmpSoma == 0) tmpSoma++;
+                else tmpSoma *= 2;
                 break;
             }
         }

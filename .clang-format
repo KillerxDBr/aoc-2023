@@ -5,3 +5,5 @@ AlignArrayOfStructures: Left
 AlignConsecutiveAssignments: Consecutive
 AlignConsecutiveMacros: Consecutive
 AlignEscapedNewlines: Right
+BreakTemplateDeclarations: Yes
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse

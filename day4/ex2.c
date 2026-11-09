@@ -3,6 +3,10 @@
 #include "nob.h"
 #include "utils.h"
 
+#ifdef _WIN32
+#define strdup _strdup
+#endif
+
 /*
 typedef struct {
     <type> *items;
@@ -37,8 +41,7 @@ int main(int argc, char **argv) {
 
     Nob_String_View sv;
     Nob_String_Builder sb = {};
-    if (!nob_read_entire_file(input, &sb))
-        return 1;
+    if (!nob_read_entire_file(input, &sb)) return 1;
 
     sv = nob_sv_trim(nob_sb_to_sv(sb));
 
@@ -123,8 +126,7 @@ void updateStrings(Strings *strings, size_t ysize, size_t wsize, Numbers *yourNu
             wn = winningNumbers->items[j + i * wsize];
             for (size_t l = 0; l < ysize; l++) {
                 yn = yourNumbers->items[l + ysize * i];
-                if (yn == wn)
-                    n++;
+                if (yn == wn) n++;
             }
         }
         nob_da_append(result, n);
@@ -134,8 +136,7 @@ void updateStrings(Strings *strings, size_t ysize, size_t wsize, Numbers *yourNu
     char *dupString;
 
     for (size_t i = index; i < result->count; i++) {
-        if (result->items[i] == 0)
-            continue;
+        if (result->items[i] == 0) continue;
         for (size_t j = 1; j <= result->items[i]; j++) {
             size_t strToDup = originalSize + 1;
             for (size_t k = 0; k < originalSize; k++) {

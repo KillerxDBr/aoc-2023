@@ -21,8 +21,7 @@ int main(int argc, char **argv) {
     assert(input != NULL);
 
     Nob_String_Builder sb = {};
-    if (!nob_read_entire_file(input, &sb))
-        return 1;
+    if (!nob_read_entire_file(input, &sb)) return 1;
 
     Nob_String_View sv = nob_sb_to_sv(sb);
 
@@ -66,8 +65,7 @@ int main(int argc, char **argv) {
 uint64_t kxd_sv_chop_u64(Nob_String_View *sv) {
     uint64_t result = 0;
     while (sv->count > 0) {
-        if (isdigit(*sv->data))
-            result = result * 10 + *sv->data - '0';
+        if (isdigit(*sv->data)) result = result * 10 + *sv->data - '0';
         sv->count -= 1;
         sv->data += 1;
     }

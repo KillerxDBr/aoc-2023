@@ -26,8 +26,7 @@ int main(int argc, char **argv) {
     Nodes nodes = {};
 
     Nob_String_Builder sb = {};
-    if (!nob_read_entire_file(input, &sb))
-        nob_return_defer(1);
+    if (!nob_read_entire_file(input, &sb)) nob_return_defer(1);
 
     Nob_String_View sv           = nob_sv_trim(nob_sb_to_sv(sb));
     Nob_String_View instructions = nob_sv_trim(nob_sv_chop_by_delim(&sv, '\n'));
@@ -65,9 +64,9 @@ int main(int argc, char **argv) {
         nob_log(NOB_INFO, "Node: %s Left: %s Right: %s", (char *)&n.node, (char *)&n.left, (char *)&n.right);
     }
 
-    uint32_t pos  = *(uint32_t*)"AAA";
+    uint32_t pos  = *(uint32_t *)"AAA";
     size_t nMoves = 0;
-    for (; pos != *(uint32_t*)"ZZZ"; ++nMoves) {
+    for (; pos != *(uint32_t *)"ZZZ"; ++nMoves) {
         Node n;
         for (size_t j = 0; j < nodes.count; ++j) {
             if (nodes.items[j].node == pos) {
