@@ -1752,6 +1752,7 @@ static Nob_Proc nob__cmd_start_process(Nob_Cmd cmd, Nob_Fd *fdin, Nob_Fd *fdout,
                 nob_log(NOB_ERROR, "Could not setup stdout for child process: %s", strerror(errno));
                 exit(1);
             }
+            close(*fdout);
         }
 
         if (fderr) {
@@ -1759,6 +1760,7 @@ static Nob_Proc nob__cmd_start_process(Nob_Cmd cmd, Nob_Fd *fdin, Nob_Fd *fdout,
                 nob_log(NOB_ERROR, "Could not setup stderr for child process: %s", strerror(errno));
                 exit(1);
             }
+            close(*fderr);
         }
 
         // NOTE: This leaks a bit of memory in the child process.
@@ -2091,12 +2093,6 @@ defer:
     }
 
     if (WIFEXITED(wstatus)) {
-        int exit_status = WEXITSTATUS(wstatus);
-        if (exit_status != 0) {
-            nob_log(NOB_ERROR, "command exited with exit code %d", exit_status);
-            return -1;
-        }
-
         if (proc.out) {
             nob__read_from_pipe(proc.out, stdout);
             close(proc.out);
@@ -2104,6 +2100,12 @@ defer:
         if (proc.err) {
             nob__read_from_pipe(proc.err, stderr);
             close(proc.err);
+        }
+
+        int exit_status = WEXITSTATUS(wstatus);
+        if (exit_status != 0) {
+            nob_log(NOB_ERROR, "command exited with exit code %d", exit_status);
+            return -1;
         }
 
         return 1;
