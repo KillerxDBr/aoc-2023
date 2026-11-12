@@ -103,3 +103,4 @@ ex2
 test.c
 build/
 *.txt
+*.rdi
