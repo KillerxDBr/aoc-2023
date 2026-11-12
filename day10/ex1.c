@@ -1,5 +1,6 @@
 // #define NOB_IMPLEMENTATION
 #include "nob.h"
+#include "out.h"
 #include "utils.h"
 
 #include <inttypes.h>
@@ -41,7 +42,42 @@ typedef struct {
 typedef SSIZE_T ssize_t;
 #endif
 
+struct buf out;
+
+static void test(Nob_Log_Level level, const char *fmt, va_list args) {
+    switch (level) {
+    case NOB_INFO:
+        APPEND_STR(&out, "[INFO] ");
+        break;
+    case NOB_WARNING:
+        APPEND_STR(&out, "[WARNING] ");
+        break;
+    case NOB_ERROR:
+        APPEND_STR(&out, "[ERROR] ");
+        break;
+    case NOB_NO_LOGS:
+        return;
+    default:
+        NOB_UNREACHABLE("test");
+    }
+
+    appendv(&out, (unsigned char *)fmt, args);
+    append_byte(&out, '\n');
+}
+
 int main(int argc, char **argv) {
+    unsigned char mem[1 << 16];
+    OSFD fd;
+#ifdef _WIN32
+    fd = GetStdHandle(STD_OUTPUT_HANDLE);
+    assert(fd != INVALID_HANDLE_VALUE);
+#else
+    fd = 1;
+#endif
+    out = (struct buf)FDBUF(fd, mem, sizeof(mem));
+
+    nob_set_log_handler(test);
+
     int result = 0;
 
     const char *input = ProcessInput(argc, argv, __FILE__);
@@ -51,8 +87,7 @@ int main(int argc, char **argv) {
     Cells map         = {};
 
     Nob_String_Builder sb = {};
-    if (!nob_read_entire_file(input, &sb))
-        nob_return_defer(1);
+    if (!nob_read_entire_file(input, &sb)) nob_return_defer(1);
 
     size_t lineCount   = 0;
     Nob_String_View sv = nob_sv_trim(nob_sb_to_sv(sb));
@@ -182,6 +217,8 @@ int main(int argc, char **argv) {
 defer:
     nob_sb_free(sb);
     nob_da_free(map);
+
+    flush(&out);
 
     return result;
 }
