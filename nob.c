@@ -234,7 +234,7 @@ int main(int argc, char **argv) {
                 nob_cc_inputs(&cmd, "-fsanitize=undefined,address", "-fno-omit-frame-pointer", "-g");
 #endif
                 nob_cc_flags(&cmd);
-                cmd_run(&cmd, .async = &procs);
+                cmd_run(&cmd, .async = &procs, .sync_out = true);
             }
         }
     }
