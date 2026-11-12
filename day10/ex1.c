@@ -42,6 +42,20 @@ typedef struct {
 typedef SSIZE_T ssize_t;
 #endif
 
+enum Directions {
+    DIR_N = (1 << 1),
+    DIR_S = (1 << 2),
+    DIR_E = (1 << 3),
+    DIR_W = (1 << 4),
+
+    DIR_NE = (DIR_N | DIR_E),
+    DIR_NW = (DIR_N | DIR_W),
+    DIR_SE = (DIR_S | DIR_E),
+    DIR_SW = (DIR_S | DIR_W),
+    DIR_EW = (DIR_E | DIR_W),
+    DIR_NS = (DIR_N | DIR_S),
+};
+
 struct buf out;
 
 static void test(Nob_Log_Level level, const char *fmt, va_list args) {
@@ -125,10 +139,6 @@ int main(int argc, char **argv) {
 
     assert(startIndex < map.count);
 
-    // Cell start = map.items[startIndex];
-    Cell start = map.items[0];
-    nob_log(NOB_INFO, "Starting Position: " CELL_FMT, CELL_ARGS(start));
-
     // for (size_t i = 0; i < map.count; ++i) {
     //     nob_log(NOB_INFO, CELL_FMT, CELL_ARGS(map.items[i]));
     // }
@@ -139,47 +149,165 @@ int main(int argc, char **argv) {
     nob_log(NOB_INFO, "Map Size: (%d, %d)", mapSize.x, mapSize.y);
     nob_log(NOB_INFO, "Number of Map Cells: %zu", map.count);
 
+    Cell start = map.items[startIndex];
+    nob_log(NOB_INFO, "Starting Position: " CELL_FMT, CELL_ARGS(start));
     {
         // arr2d[y][x]
         const Cell(*arr2d)[mapSize.x] = (void *)map.items;
 
-        bool up = false;
-        bool dw = false;
-        bool lf = false;
-        bool rt = false;
+        enum DIR {
+            DIR_NONE,
+            DIR_N,
+            DIR_E,
+            DIR_S,
+            DIR_W,
+            DIR_COUNT,
+        } dir = DIR_NONE;
 
-        const Cell *c = NULL;
+        const char *dirLabels[] = {
+            [DIR_NONE] = "DIR_NONE", [DIR_N] = "DIR_N", [DIR_E] = "DIR_E",
+            [DIR_S] = "DIR_S",       [DIR_W] = "DIR_W", [DIR_COUNT] = "DIR_COUNT",
+        };
+
+        const Cell *c    = NULL;
+        const Cell *next = NULL;
+
         if (start.pos.x > 0) { // East - Left
             c = &arr2d[start.pos.y][start.pos.x - 1];
-            if (c->shape == PIPE_EW || c->shape == PIPE_NE || c->shape == PIPE_SE)
-                lf = true;
-        }
-
-        if (start.pos.x < (mapSize.x - 1)) { // West - Right
-            c = &arr2d[start.pos.y][start.pos.x + 1];
-            if (c->shape == PIPE_EW || c->shape == PIPE_NW || c->shape == PIPE_SW)
-                rt = true;
-        }
-
-        if (start.pos.y > 0) { // South - Down
-            c = &arr2d[start.pos.y + 1][start.pos.x];
-            if (c->shape == PIPE_NS || c->shape == PIPE_SW || c->shape == PIPE_SE)
-                dw = true;
-        }
-
-        if (start.pos.y < (mapSize.y - 1)) { // North - Up
-            c = &arr2d[start.pos.y - 1][start.pos.x];
-            if (c->shape == PIPE_NS || c->shape == PIPE_NE || c->shape == PIPE_NW) {
-                up = true;
+            nob_log(NOB_INFO, "Testing %5s Position: " CELL_FMT, "Left", CELL_ARGS(*c));
+            if (c->shape == PIPE_EW || c->shape == PIPE_NE || c->shape == PIPE_SE) {
+                next = c;
+                dir  = DIR_W;
             }
         }
 
-#define BOOLLOG(b) nob_log(NOB_INFO, "%s = %s", (#b), (b) ? "True" : "False")
+        if (next == NULL) {
+            if (start.pos.x < (mapSize.x - 1)) { // West - Right
+                c = &arr2d[start.pos.y][start.pos.x + 1];
+                nob_log(NOB_INFO, "Testing %5s Position: " CELL_FMT, "Right", CELL_ARGS(*c));
+                if (c->shape == PIPE_EW || c->shape == PIPE_NW || c->shape == PIPE_SW) {
+                    next = c;
+                    dir  = DIR_E;
+                }
+            }
+        }
 
-        BOOLLOG(up);
-        BOOLLOG(dw);
-        BOOLLOG(lf);
-        BOOLLOG(rt);
+        if (next == NULL) {
+            if (start.pos.y > 0) { // North - Up
+                c = &arr2d[start.pos.y - 1][start.pos.x];
+                nob_log(NOB_INFO, "Testing %5s Position: " CELL_FMT, "Up", CELL_ARGS(*c));
+                if (c->shape == PIPE_NS || c->shape == PIPE_SE || c->shape == PIPE_SW) {
+                    next = c;
+                    dir  = DIR_N;
+                }
+            }
+        }
+
+        if (next == NULL) {
+            if (start.pos.y < (mapSize.y - 1)) { // South - Down
+                c = &arr2d[start.pos.y + 1][start.pos.x];
+                nob_log(NOB_INFO, "Testing %5s Position: " CELL_FMT, "Down", CELL_ARGS(*c));
+                if (c->shape == PIPE_NS || c->shape == PIPE_NE || c->shape == PIPE_NW) {
+                    next = c;
+                    dir  = DIR_S;
+                }
+            }
+        }
+
+        assert(next != NULL);
+        assert(dir > DIR_NONE && dir < DIR_COUNT);
+
+        size_t steps = 0;
+        nob_log(NOB_INFO, "Next Position: " CELL_FMT, CELL_ARGS(*next));
+        while (next->shape != PIPE_POS) {
+#if 0
+            NOB_TODO("Count Cells");
+#else
+            switch (dir) {
+            case DIR_N:
+                switch (next->shape) {
+                case PIPE_NS:
+                    next = &arr2d[next->pos.y - 1][next->pos.x];
+                    break;
+                case PIPE_SE:
+                    next = &arr2d[next->pos.y][next->pos.x + 1];
+                    dir  = DIR_E;
+                    break;
+                case PIPE_SW:
+                    next = &arr2d[next->pos.y][next->pos.x - 1];
+                    dir  = DIR_W;
+                    break;
+                default:
+                    NOB_UNREACHABLE("Pipe Shape North");
+                    break;
+                }
+                break;
+            case DIR_S:
+                switch (next->shape) {
+                case PIPE_NS:
+                    next = &arr2d[next->pos.y + 1][next->pos.x];
+                    break;
+                case PIPE_NE:
+                    next = &arr2d[next->pos.y][next->pos.x + 1];
+                    dir  = DIR_W;
+                    break;
+                case PIPE_NW:
+                    next = &arr2d[next->pos.y][next->pos.x - 1];
+                    dir  = DIR_E;
+                    break;
+                default:
+                    NOB_UNREACHABLE("Pipe Shape South");
+                    break;
+                }
+                break;
+            case DIR_E:
+                switch (next->shape) {
+                case PIPE_EW:
+                    next = &arr2d[next->pos.y][next->pos.x + 1];
+                    break;
+                case PIPE_NW:
+                    next = &arr2d[next->pos.y - 1][next->pos.x];
+                    dir  = DIR_N;
+                    break;
+                case PIPE_SW:
+                    next = &arr2d[next->pos.y + 1][next->pos.x];
+                    dir  = DIR_S;
+                    break;
+                default:
+                    NOB_UNREACHABLE("Pipe Shape East");
+                    break;
+                }
+                break;
+            case DIR_W:
+                switch (next->shape) {
+                case PIPE_EW:
+                    next = &arr2d[next->pos.y][next->pos.x - 1];
+                    break;
+                case PIPE_NE:
+                    next = &arr2d[next->pos.y - 1][next->pos.x];
+                    dir  = DIR_N;
+                    break;
+                case PIPE_SE:
+                    next = &arr2d[next->pos.y + 1][next->pos.x];
+                    dir  = DIR_S;
+                    break;
+                default:
+                    NOB_UNREACHABLE("Pipe Shape West");
+                    break;
+                }
+                break;
+            default:
+                NOB_UNREACHABLE("Direction");
+                break;
+            }
+            nob_log(NOB_INFO, "Next Position: " CELL_FMT, CELL_ARGS(*next));
+            nob_log(NOB_INFO, "New Direction: %s", dirLabels[dir]);
+            steps++;
+            // break;
+#endif
+        }
+        size_t resposta = (steps / 2) + (steps % 2);
+        nob_log(NOB_INFO, "Resultado: %zu", resposta);
     }
 
 #if 0
