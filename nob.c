@@ -228,7 +228,8 @@ int main(int argc, char **argv) {
 
     char folder[8];
     for (int day = 1; true; ++day) {
-        snprintf(folder, sizeof(folder), "day%d", day);
+        int n = snprintf(folder, sizeof(folder), "day%d", day);
+        NOB_ASSERT(n > 0 && n < (int)ARRAY_LEN(folder));
         if (file_exists(folder) < 1) break;
         for (int ex = 1; ex < 3; ++ex) {
             const char *srcFile = src_fmt(day, ex);
@@ -270,7 +271,8 @@ int main(int argc, char **argv) {
     if (run) {
         Nob_File_Paths fp = {};
         for (int day = 1; true; ++day) {
-            snprintf(folder, sizeof(folder), "day%d", day);
+            int n = snprintf(folder, sizeof(folder), "day%d", day);
+            NOB_ASSERT(n > 0 && n < (int)ARRAY_LEN(folder));
             if (file_exists(folder) < 1) break;
             for (int ex = 1; ex < 3; ++ex) {
                 const char *exe = exe_fmt(day, ex);
