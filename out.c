@@ -9,6 +9,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 void appendf(struct buf *b, unsigned char *fmt, ...) {
     va_list args;
@@ -34,6 +35,9 @@ static _Bool os_write(OSFD fd, void *buf, int n) {
     BOOL r        = WriteFile(fd, buf, sz, &written, NULL);
     return r && written == sz;
 #else
+    (void)fd;
+    (void)buf;
+    (void)n;
     fprintf(stderr, "os_write not implemented\n");
     fflush(NULL);
     abort();
