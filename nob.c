@@ -88,8 +88,7 @@ static inline bool nob_is_debugging(void) {
     bool result = false;
 
     int fd = open("/proc/self/status", O_RDONLY);
-    if (fd == -1)
-        return false;
+    if (fd == -1) return false;
 
     sb.count = 0;
     char buf[256];
@@ -99,7 +98,7 @@ static inline bool nob_is_debugging(void) {
     }
     close(fd);
     // nob_log(NOB_INFO, "self/status:\n" SV_Fmt, (int)sb.count, sb.items);
-    const String_View prefix = SV_STATIC("TracerPid:");
+    const String_View prefix = SVLIT("TracerPid:");
 
     String_View sv = sv_trim(sb_to_sv(sb));
     String_View sv2;
@@ -125,10 +124,7 @@ static inline bool nob_is_debugging(void) {
 int main(int argc, char **argv) {
     int result = 0;
 
-    if (!nob_is_debugging())
-        NOB_GO_REBUILD_URSELF_PLUS(argc, argv, "include/nob.h");
-
-    // const char *program = nob_shift(argv, argc);
+    if (!nob_is_debugging()) NOB_GO_REBUILD_URSELF_PLUS(argc, argv, "include/nob.h");
 
     bool force = false;
     bool clear = false;
@@ -171,8 +167,7 @@ int main(int argc, char **argv) {
         }
     }
 
-    if (!mkdir_if_not_exists("build/"))
-        return_defer(1);
+    if (!mkdir_if_not_exists("build/")) return_defer(1);
 
     if (force || needs_rebuild1(nob_obj, "include/nob.h") > 0) {
         nob_cc(&cmd);
@@ -185,8 +180,7 @@ int main(int argc, char **argv) {
 #endif
         nob_cc_flags(&cmd);
 
-        if (!cmd_run(&cmd))
-            return_defer(1);
+        if (!cmd_run(&cmd)) return_defer(1);
     }
 
     {
@@ -202,22 +196,19 @@ int main(int argc, char **argv) {
 #endif
             nob_cc_flags(&cmd);
 
-            if (!cmd_run(&cmd))
-                return_defer(1);
+            if (!cmd_run(&cmd)) return_defer(1);
         }
     }
 
-    char folder[32];
+    char folder[8];
     for (int day = 1; true; ++day) {
         snprintf(folder, sizeof(folder), "day%d", day);
-        if (file_exists(folder) < 1)
-            break;
+        if (file_exists(folder) < 1) break;
         for (int ex = 1; ex < 3; ++ex) {
             const char *srcFile = src_fmt(day, ex);
             const char *output  = exe_fmt(day, ex);
 
-            if (file_exists(srcFile) < 1)
-                continue;
+            if (file_exists(srcFile) < 1) continue;
 
             const char *deps[] = {
                 srcFile,
@@ -239,19 +230,16 @@ int main(int argc, char **argv) {
         }
     }
 
-    if (!procs_flush(&procs))
-        return_defer(1);
+    if (!procs_flush(&procs)) return_defer(1);
 
     if (run) {
         Nob_File_Paths fp = {};
         for (int day = 1; true; ++day) {
             snprintf(folder, sizeof(folder), "day%d", day);
-            if (file_exists(folder) < 1)
-                break;
+            if (file_exists(folder) < 1) break;
             for (int ex = 1; ex < 3; ++ex) {
                 const char *exe = exe_fmt(day, ex);
-                if (file_exists(exe) < 1)
-                    continue;
+                if (file_exists(exe) < 1) continue;
 
                 nob_cmd_append(&cmd, exe);
                 if (small) {
@@ -266,9 +254,8 @@ int main(int argc, char **argv) {
 
         nob_log(NOB_INFO, "====================================================");
         nob_log(NOB_INFO, "End of Execution");
-        if (!fp.count) {
-            nob_log(NOB_INFO, "OK...");
-        } else {
+        if (!fp.count) nob_log(NOB_INFO, "OK...");
+        else {
             for (size_t i = 0; i < fp.count; ++i)
                 nob_log(NOB_ERROR, "%s failed to Execute", fp.items[i]);
         }
