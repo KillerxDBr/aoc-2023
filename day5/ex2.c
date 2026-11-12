@@ -23,6 +23,10 @@ typedef struct {
 DA_ARRAY(Ranges, Range);
 DA_ARRAY(Seeds, Seed);
 
+#ifndef _WIN32
+#define __stdcall
+#endif
+
 void parseSeeds(Nob_String_View sv, Seeds *seeds);
 void parseRange2(Nob_String_View sv, Ranges *arrRange);
 uint64_t __stdcall checkRange(uint64_t n, Ranges ranges);
