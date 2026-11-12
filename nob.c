@@ -76,6 +76,7 @@ static inline const char *exe_fmt(int day, int ex) { return temp_sprintf("build/
 
 static const char *nob_obj   = "build/nob_" CC_STR OBJ_EXT;
 static const char *utils_obj = "build/utils_" CC_STR OBJ_EXT;
+static const char *out_obj   = "build/out_" CC_STR OBJ_EXT;
 
 Cmd cmd           = {};
 String_Builder sb = {};
@@ -159,7 +160,9 @@ int main(int argc, char **argv) {
                 da_free(fp);
                 return_defer(1);
             }
-            for (size_t i = 2; i < fp.count; ++i) {
+            for (size_t i = 0; i < fp.count; ++i) {
+                if (strcmp(fp.items[i], ".") == 0) continue;
+                if (strcmp(fp.items[i], "..") == 0) continue;
                 delete_file(temp_sprintf("build/%s", fp.items[i]));
             }
             da_free(fp);
@@ -177,6 +180,8 @@ int main(int argc, char **argv) {
         nob_cc_inputs(&cmd, "-xc", "-c", "include/nob.h", "-O2");
 #if !defined(_WIN32)
         nob_cc_inputs(&cmd, "-fsanitize=undefined,address", "-fno-omit-frame-pointer", "-g");
+#elif defined(_MSC_VER) && defined(__clang__)
+        nob_cc_inputs(&cmd, "-fms-runtime-lib=static");
 #endif
         nob_cc_flags(&cmd);
 
@@ -193,6 +198,27 @@ int main(int argc, char **argv) {
             nob_cc_include(&cmd, "include/");
 #if !defined(_WIN32)
             nob_cc_inputs(&cmd, "-fsanitize=undefined,address", "-fno-omit-frame-pointer", "-g");
+#elif defined(_MSC_VER) && defined(__clang__)
+            nob_cc_inputs(&cmd, "-fms-runtime-lib=static");
+#endif
+            nob_cc_flags(&cmd);
+
+            if (!cmd_run(&cmd)) return_defer(1);
+        }
+    }
+
+    {
+        const char *deps[] = {"include/out.h", "out.c"};
+        if (force || needs_rebuild(out_obj, deps, ARRAY_LEN(deps)) > 0) {
+            nob_cc(&cmd);
+
+            nob_cc_obj_output(&cmd, out_obj);
+            nob_cc_inputs(&cmd, "-c", "out.c", "-O2");
+            nob_cc_include(&cmd, "include/");
+#if !defined(_WIN32)
+            nob_cc_inputs(&cmd, "-fsanitize=undefined,address", "-fno-omit-frame-pointer", "-g");
+#elif defined(_MSC_VER) && defined(__clang__)
+            nob_cc_inputs(&cmd, "-fms-runtime-lib=static");
 #endif
             nob_cc_flags(&cmd);
 
@@ -214,15 +240,24 @@ int main(int argc, char **argv) {
                 srcFile,
                 nob_obj,
                 utils_obj,
+                out_obj,
             };
 
-            if (force || needs_rebuild(output, (void *)deps, ARRAY_LEN(deps)) > 0) {
+            if (force || needs_rebuild(output, deps, ARRAY_LEN(deps)) > 0) {
                 nob_cc(&cmd);
                 nob_cc_output(&cmd, output);
-                nob_cc_inputs(&cmd, srcFile, nob_obj, utils_obj);
+                for (size_t i = 0; i < ARRAY_LEN(deps); ++i)
+                    nob_cmd_append(&cmd, deps[i]);
                 nob_cc_include(&cmd, "include/");
 #if !defined(_WIN32)
                 nob_cc_inputs(&cmd, "-fsanitize=undefined,address", "-fno-omit-frame-pointer", "-g");
+#elif defined(_MSC_VER) && defined(__clang__)
+                nob_cc_inputs(&cmd, "-fms-runtime-lib=static", //
+                              "-Wl,-nodefaultlib:libucrt.lib," //
+                              "-defaultlib:ucrt.lib,"          //
+                              "-defaultlib:libvcruntime.lib,"  //
+                              "-defaultlib:libcpmt.lib,"       //
+                              "-defaultlib:libcmt.lib");       //
 #endif
                 nob_cc_flags(&cmd);
                 cmd_run(&cmd, .async = &procs, .sync_out = true);
