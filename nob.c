@@ -78,6 +78,10 @@ static const char *nob_obj   = "build/nob_" CC_STR OBJ_EXT;
 static const char *utils_obj = "build/utils_" CC_STR OBJ_EXT;
 static const char *out_obj   = "build/out_" CC_STR OBJ_EXT;
 
+#ifdef _WIN32
+static const char *res_obj = "build/resource.o";
+#endif
+
 Cmd cmd           = {};
 String_Builder sb = {};
 Nob_Procs procs   = {};
@@ -170,6 +174,26 @@ int main(int argc, char **argv) {
         }
     }
 
+#ifdef _WIN32
+#define FINDER "where"
+#define DEVNUL "NUL"
+#else
+#define FINDER "which"
+#define DEVNUL "/dev/null"
+#endif
+
+#ifdef _WIN32
+    {
+        // Move to funtion if needed
+        cmd_append(&cmd, FINDER, "resinator");
+
+        if (!cmd_run(&cmd, .stdout_path = DEVNUL, .stderr_path = DEVNUL)) {
+            nob_log(NOB_ERROR, "resinator not found in Path!");
+            return_defer(1);
+        }
+    }
+#endif
+
     if (!mkdir_if_not_exists("build/")) return_defer(1);
 
     if (force || needs_rebuild1(nob_obj, "include/nob.h") > 0) {
@@ -185,7 +209,7 @@ int main(int argc, char **argv) {
 #endif
         nob_cc_flags(&cmd);
 
-        if (!cmd_run(&cmd)) return_defer(1);
+        if (!cmd_run(&cmd, .async = &procs, .sync_out = true)) return_defer(1);
     }
 
     {
@@ -203,7 +227,7 @@ int main(int argc, char **argv) {
 #endif
             nob_cc_flags(&cmd);
 
-            if (!cmd_run(&cmd)) return_defer(1);
+            if (!cmd_run(&cmd, .async = &procs, .sync_out = true)) return_defer(1);
         }
     }
 
@@ -222,9 +246,27 @@ int main(int argc, char **argv) {
 #endif
             nob_cc_flags(&cmd);
 
-            if (!cmd_run(&cmd)) return_defer(1);
+            if (!cmd_run(&cmd, .async = &procs, .sync_out = true)) return_defer(1);
         }
     }
+
+#ifdef _WIN32
+    {
+        const char *deps[] = {"manifest.rc", "utf8.xml"};
+        if (force || nob_needs_rebuild(res_obj, deps, ARRAY_LEN(deps)) > 0) {
+            cmd_append(&cmd, "resinator");
+            cmd_append(&cmd, "/d", "UNICODE");
+            cmd_append(&cmd, "/d", "_UNICODE");
+            cmd_append(&cmd, "/fo", res_obj);
+            cmd_append(&cmd, "/c", "65001", );
+            cmd_append(&cmd, "manifest.rc");
+
+            if (!cmd_run(&cmd, .async = &procs, .sync_out = true)) return_defer(1);
+        }
+    }
+#endif
+
+    if (!procs_flush(&procs)) return_defer(1);
 
     char folder[8];
     for (int day = 1; true; ++day) {
@@ -238,10 +280,10 @@ int main(int argc, char **argv) {
             if (file_exists(srcFile) < 1) continue;
 
             const char *deps[] = {
-                srcFile,
-                nob_obj,
-                utils_obj,
-                out_obj,
+                srcFile, nob_obj, utils_obj, out_obj,
+#ifdef _WIN32
+                res_obj,
+#endif
             };
 
             if (force || needs_rebuild(output, deps, ARRAY_LEN(deps)) > 0) {
@@ -261,7 +303,7 @@ int main(int argc, char **argv) {
                               "-defaultlib:libcmt.lib");       //
 #endif
                 nob_cc_flags(&cmd);
-                cmd_run(&cmd, .async = &procs, .sync_out = true);
+                if (!cmd_run(&cmd, .async = &procs, .sync_out = true)) return_defer(1);
             }
         }
     }
