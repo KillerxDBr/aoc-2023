@@ -4,6 +4,7 @@
 #include <windows.h>
 #define VALID_OSFD(fd) ((fd) != INVALID_HANDLE_VALUE)
 #else
+#include <unistd.h>
 #define VALID_OSFD(fd) ((fd) >= 0)
 #endif
 
@@ -23,24 +24,21 @@ void appendv(struct buf *b, unsigned char *fmt, va_list args) {
 
     int n = vsnprintf((char *)buf, sizeof(buf), (char *)fmt, args);
 
-    assert(n > 0 && n < (int)sizeof(buf));
+    assert((unsigned int)n < sizeof(buf));
     append(b, buf, n);
 }
 
-static _Bool os_write(OSFD fd, void *buf, int n) {
+static bool os_write(OSFD fd, void *buf, int n) {
+    if (n < 0) return false;
+    if (n == 0) return true;
+
 #ifdef _WIN32
-    if (n < 0) return 0;
     DWORD sz      = (DWORD)n;
     DWORD written = 0;
-    BOOL r        = WriteFile(fd, buf, sz, &written, NULL);
-    return r && written == sz;
+    return WriteFile(fd, buf, sz, &written, NULL);
 #else
-    (void)fd;
-    (void)buf;
-    (void)n;
-    fprintf(stderr, "os_write not implemented\n");
-    fflush(NULL);
-    abort();
+    size_t sz = (size_t)n;
+    return write(fd, buf, sz) > 0;
 #endif
 }
 
@@ -72,5 +70,20 @@ void append(struct buf *b, unsigned char *src, int len) {
 }
 
 void append_byte(struct buf *b, unsigned char uc) {
-    append(b, &uc, 1);
+    append(b, &uc, 1); //
+}
+
+void line_break(struct buf *b) {
+    append_byte(b, '\n'); //
+}
+
+void append_f32(struct buf *b, float f) {
+    append_f32_prec(b, f, 2); //
+}
+
+void append_f32_prec(struct buf *b, float f, int precision) {
+    char str[64];
+    int n = snprintf(str, sizeof(str), "%.*f", precision, f);
+    assert((unsigned)n < sizeof(str));
+    append(b, (unsigned char *)str, n);
 }
