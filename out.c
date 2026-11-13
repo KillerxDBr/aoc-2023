@@ -1,4 +1,4 @@
-#include "include/out.h"
+#include "out.h"
 
 #ifdef _WIN32
 #include <windows.h>
