@@ -104,3 +104,4 @@ test.c
 build/
 *.txt
 *.rdi
+*.old

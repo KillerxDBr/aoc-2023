@@ -188,8 +188,8 @@ int main(int argc, char **argv) {
         cmd_append(&cmd, FINDER, "resinator");
 
         if (!cmd_run(&cmd, .stdout_path = DEVNUL, .stderr_path = DEVNUL)) {
-            nob_log(NOB_ERROR, "resinator not found in Path!");
-            return_defer(1);
+            nob_log(NOB_WARNING, "resinator not found in Path!");
+            // return_defer(1);
         }
     }
 #endif
