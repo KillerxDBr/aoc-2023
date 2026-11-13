@@ -27,8 +27,8 @@ typedef struct {
     size_t capacity;
 } Strings;
 
-void updateNumbers(Strings *strings, Numbers *yourNumbers, Numbers *winningNumbers, size_t index);
-void updateStrings(Strings *strings, size_t ysize, size_t wsize, Numbers *yourNumbers, Numbers *winningNumbers,
+void updateNumbers(Strings strings, Numbers *yourNumbers, Numbers *winningNumbers, size_t index);
+void updateStrings(Strings *strings, size_t ysize, size_t wsize, Numbers yourNumbers, Numbers winningNumbers,
                    size_t index, Numbers *result);
 
 size_t originalSize;
@@ -61,15 +61,15 @@ int main(int argc, char **argv) {
 
     originalSize = strings.count;
     size_t index = 0;
-    updateNumbers(&strings, &yourNumbers, &winningNumbers, index);
+    updateNumbers(strings, &yourNumbers, &winningNumbers, index);
     size_t wsize = winningNumbers.count / originalSize;
     size_t ysize = yourNumbers.count / originalSize;
 
     do {
         size_t tmpIndex = strings.count;
-        updateStrings(&strings, ysize, wsize, &yourNumbers, &winningNumbers, index, &result);
+        updateStrings(&strings, ysize, wsize, yourNumbers, winningNumbers, index, &result);
         index = tmpIndex;
-        updateNumbers(&strings, &yourNumbers, &winningNumbers, index);
+        updateNumbers(strings, &yourNumbers, &winningNumbers, index);
     } while (index != strings.count);
 
     const size_t rst = strings.count;
@@ -86,15 +86,15 @@ int main(int argc, char **argv) {
     return 0;
 }
 
-void updateNumbers(Strings *strings, Numbers *yourNumbers, Numbers *winningNumbers, size_t index) {
+void updateNumbers(Strings strings, Numbers *yourNumbers, Numbers *winningNumbers, size_t index) {
     size_t n;
     char *str = NULL;
     char *sep = NULL;
 
-    for (size_t i = index; i < strings->count; i++) {
+    for (size_t i = index; i < strings.count; i++) {
 
-        str = strchr(strings->items[i], ':');
-        sep = strchr(strings->items[i], '|');
+        str = strchr(strings.items[i], ':');
+        sep = strchr(strings.items[i], '|');
         str++;
 
         while (str < sep - 1 && str != NULL) {
@@ -106,7 +106,7 @@ void updateNumbers(Strings *strings, Numbers *yourNumbers, Numbers *winningNumbe
         }
         sep++;
 
-        while (sep != NULL && sep < sep + strlen(strings->items[i])) {
+        while (sep != NULL && sep < sep + strlen(strings.items[i])) {
             sscanf(sep, "%zu", &n);
             sep++;
             sep++;
@@ -116,16 +116,16 @@ void updateNumbers(Strings *strings, Numbers *yourNumbers, Numbers *winningNumbe
     }
 }
 
-void updateStrings(Strings *strings, size_t ysize, size_t wsize, Numbers *yourNumbers, Numbers *winningNumbers,
+void updateStrings(Strings *strings, size_t ysize, size_t wsize, Numbers yourNumbers, Numbers winningNumbers,
                    size_t index, Numbers *result) {
     size_t wn, yn;
     size_t n = 0;
 
     for (size_t i = index; i < strings->count; i++) {
         for (size_t j = 0; j < wsize; j++) {
-            wn = winningNumbers->items[j + i * wsize];
+            wn = winningNumbers.items[j + i * wsize];
             for (size_t l = 0; l < ysize; l++) {
-                yn = yourNumbers->items[l + ysize * i];
+                yn = yourNumbers.items[l + ysize * i];
                 if (yn == wn) n++;
             }
         }

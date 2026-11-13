@@ -86,9 +86,7 @@ int main(int argc, char **argv) {
 
     while (content.count > 0) {
         Nob_String_View sv = nob_sv_trim(nob_sv_chop_by_delim(&content, '\n'));
-        if (sv.count == 0) continue;
-
-        nob_da_append(&strings, sv);
+        if (sv.count) nob_da_append(&strings, sv);
     }
 
     int mode = 0;
