@@ -834,7 +834,7 @@ NOBDEF char *nob_temp_running_executable_path(void);
 #      define nob_cc_flags(cmd) nob_cmd_append(cmd, "-Wall", "-Wextra", "-fdiagnostics-color=always", "-fansi-escape-codes")
 #    endif
 #  else
-#    define nob_cc_flags(cmd) nob_cmd_append(cmd, "-Wall", "-Wextra")
+#    define nob_cc_flags(cmd) nob_cmd_append(cmd, "-Wall", "-Wextra", "-fdiagnostics-color=always")
 #  endif // _MSC_VER
 #endif // nob_cc_flags
 
