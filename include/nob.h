@@ -2002,6 +2002,15 @@ defer:
         }
 
         if (WIFEXITED(wstatus)) {
+            if (proc.out) {
+                nob__read_from_pipe(proc.out, stdout);
+                close(proc.out);
+            }
+            if (proc.err) {
+                nob__read_from_pipe(proc.err, stderr);
+                close(proc.err);
+            }
+
             int exit_status = WEXITSTATUS(wstatus);
             if (exit_status != 0) {
                 nob_log(NOB_ERROR, "command exited with exit code %d", exit_status);
@@ -2015,15 +2024,6 @@ defer:
             nob_log(NOB_ERROR, "command process was terminated by signal %d", WTERMSIG(wstatus));
             return false;
         }
-    }
-
-    if (proc.out) {
-        nob__read_from_pipe(proc.out, stdout);
-        close(proc.out);
-    }
-    if (proc.err) {
-        nob__read_from_pipe(proc.err, stderr);
-        close(proc.err);
     }
 
     return true;
