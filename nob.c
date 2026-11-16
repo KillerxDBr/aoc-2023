@@ -209,7 +209,7 @@ int main(int argc, char **argv) {
 #endif
         nob_cc_flags(&cmd);
 
-        if (!cmd_run(&cmd, .async = &procs, .sync_out = true)) return_defer(1);
+        if (!cmd_run(&cmd, .async = &procs, .sync_output = true)) return_defer(1);
     }
 
     {
@@ -227,7 +227,7 @@ int main(int argc, char **argv) {
 #endif
             nob_cc_flags(&cmd);
 
-            if (!cmd_run(&cmd, .async = &procs, .sync_out = true)) return_defer(1);
+            if (!cmd_run(&cmd, .async = &procs, .sync_output = true)) return_defer(1);
         }
     }
 
@@ -246,7 +246,7 @@ int main(int argc, char **argv) {
 #endif
             nob_cc_flags(&cmd);
 
-            if (!cmd_run(&cmd, .async = &procs, .sync_out = true)) return_defer(1);
+            if (!cmd_run(&cmd, .async = &procs, .sync_output = true)) return_defer(1);
         }
     }
 
@@ -261,7 +261,7 @@ int main(int argc, char **argv) {
             cmd_append(&cmd, "/c", "65001", );
             cmd_append(&cmd, "manifest.rc");
 
-            if (!cmd_run(&cmd, .async = &procs, .sync_out = true)) return_defer(1);
+            if (!cmd_run(&cmd, .async = &procs, .sync_output = true)) return_defer(1);
         }
     }
 #endif
@@ -303,7 +303,7 @@ int main(int argc, char **argv) {
                               "-defaultlib:libcmt.lib");       //
 #endif
                 nob_cc_flags(&cmd);
-                if (!cmd_run(&cmd, .async = &procs, .sync_out = true)) return_defer(1);
+                if (!cmd_run(&cmd, .async = &procs, .sync_output = true)) return_defer(1);
             }
         }
     }

@@ -479,25 +479,20 @@ NOBDEF void nob_sb_pad_align(Nob_String_Builder *sb, size_t size);
 
 // Process handle
 #ifdef _WIN32
-// typedef HANDLE Nob_Proc;
-typedef struct {
-    HANDLE p;
-    HANDLE out;
-    HANDLE err;
-} Nob_Proc;
 #define NOB_INVALID_PROC INVALID_HANDLE_VALUE
 typedef HANDLE Nob_Fd;
 #define NOB_INVALID_FD INVALID_HANDLE_VALUE
 #else
-typedef struct {
-    int p;
-    int out;
-    int err;
-} Nob_Proc;
 #define NOB_INVALID_PROC (-1)
 typedef int Nob_Fd;
 #define NOB_INVALID_FD (-1)
 #endif // _WIN32
+
+typedef struct {
+    Nob_Fd p;
+    Nob_Fd out;
+    Nob_Fd err;
+} Nob_Proc;
 
 NOBDEF Nob_Fd nob_fd_open_for_read(const char *path);
 NOBDEF Nob_Fd nob_fd_open_for_write(const char *path);
@@ -555,7 +550,7 @@ typedef struct {
     // Redirect stderr to file
     const char *stderr_path;
     // Sync output
-    bool sync_out;
+    bool sync_output;
 } Nob_Cmd_Opt;
 
 // Run the command with options.
@@ -1398,7 +1393,7 @@ NOBDEF bool nob__cmd_run_opt_with_location(Nob_Cmd *cmd, const char *file, int l
     return ok;
 }
 
-static void nob__read_from_pipe(Nob_Fd pp, FILE *out) {
+static bool nob__read_from_pipe(Nob_Fd pp, FILE *out) {
     while (true) {
         char tmp[2048];
 #ifdef _WIN32
@@ -1407,22 +1402,21 @@ static void nob__read_from_pipe(Nob_Fd pp, FILE *out) {
         if (!ReadFile(pp, tmp, sizeof(tmp), &n, NULL)) {
             DWORD err = GetLastError();
             if (err == ERROR_BROKEN_PIPE) break;
-            fprintf(stderr, "ERROR: ReadFile: %s\n", nob_win32_error_message(err));
-            return;
+            nob_log(NOB_ERROR, "Failed to Read from Pipe: %s", nob_win32_error_message(err));
+            return false;
         }
 #else
         ssize_t n = read(pp, tmp, sizeof(tmp));
         if (n < 0) {
-            fprintf(stderr, "ERROR: read: %s\n", strerror(errno));
-            return;
+            nob_log(NOB_ERROR, "Failed to Read from Pipe: %s", strerror(errno));
+            return false;
         }
 #endif
         if (n == 0) break;
         fprintf(out, SV_Fmt, (int)n, tmp);
-        // printf("Read %zu Bytes\n", (size_t)n);
-        // nob_sb_append_buf(&sb, tmp, n);
     }
     fflush(out);
+    return true;
 }
 
 NOBDEF bool nob_cmd_run_opt(Nob_Cmd *cmd, Nob_Cmd_Opt opt)
@@ -1463,7 +1457,7 @@ NOBDEF bool nob_cmd_run_opt(Nob_Cmd *cmd, Nob_Cmd_Opt opt)
         fdout = nob_fd_open_for_write(opt.stdout_path);
         if (fdout == NOB_INVALID_FD) nob_return_defer(false);
         opt_fdout = &fdout;
-    } else if (opt.sync_out) {
+    } else if (opt.sync_output) {
         if (!nob_pipe_create(&ppout)) nob_return_defer(false);
 #ifdef _WIN32
         SetHandleInformation(ppout.read, HANDLE_FLAG_INHERIT, 0);
@@ -1474,7 +1468,7 @@ NOBDEF bool nob_cmd_run_opt(Nob_Cmd *cmd, Nob_Cmd_Opt opt)
         fderr = nob_fd_open_for_write(opt.stderr_path);
         if (fderr == NOB_INVALID_FD) nob_return_defer(false);
         opt_fderr = &fderr;
-    } else if (opt.sync_out) {
+    } else if (opt.sync_output) {
         if (!nob_pipe_create(&pperr)) nob_return_defer(false);
 #ifdef _WIN32
         SetHandleInformation(pperr.read, HANDLE_FLAG_INHERIT, 0);
@@ -1495,9 +1489,9 @@ NOBDEF bool nob_cmd_run_opt(Nob_Cmd *cmd, Nob_Cmd_Opt opt)
     }
 
     if (opt.async) {
-        if (proc.p == NOB_INVALID_PROC) nob_return_defer(false);
-        if (opt.sync_out && ppout.read) proc.out = ppout.read;
-        if (opt.sync_out && pperr.read) proc.err = pperr.read;
+        if (proc.p == NOB_INVALID_PROC)    nob_return_defer(false);
+        if (opt.sync_output && ppout.read) proc.out = ppout.read;
+        if (opt.sync_output && pperr.read) proc.err = pperr.read;
         nob_da_append(opt.async, proc);
     } else {
         if (!nob_proc_wait(proc)) nob_return_defer(false);
@@ -1981,7 +1975,6 @@ NOBDEF bool nob_proc_wait(Nob_Proc proc)
     }
 
 defer:
-    // if (proc.out || proc.err) nob_log(NOB_INFO, "========================");
     if (proc.out) {
         nob__read_from_pipe(proc.out, stdout);
         CloseHandle(proc.out);
@@ -2038,7 +2031,7 @@ static int nob__proc_wait_async(Nob_Proc proc, int ms)
     int result = 1;
 
     DWORD wait = WaitForSingleObject(
-                       proc.p,    // HANDLE hHandle,
+                       proc.p,  // HANDLE hHandle,
                        ms       // DWORD  dwMilliseconds
                    );
 
@@ -2071,7 +2064,7 @@ defer:
         nob__read_from_pipe(proc.err, stderr);
         CloseHandle(proc.err);
     }
-    CloseHandle(proc.p);    
+    CloseHandle(proc.p);
     return result;
 #else
     long ns = ms*1000*1000;
