@@ -1,4 +1,4 @@
-/* nob - v3.10.0 - Public Domain - https://github.com/tsoding/nob.h
+/* nob - v3.10.1 - Public Domain - https://github.com/tsoding/nob.h
 
    This library is the next generation of the [NoBuild](https://github.com/tsoding/nobuild) idea.
 
@@ -63,7 +63,7 @@
       from other languages (for whatever reason).
 
       If only few specific names create conflicts for you, you can just #undef those names after the
-      `#include <nob.h>` without enabling `NOB_UNSTRIP_PREFIX` since they are macros anyway.
+      `#include <nob.h>` without enabling `NOB_UNSTRIP_PREFIX` since they are macros anyway.
 
    # Macro Interface
 
@@ -120,6 +120,10 @@
 */
 #define NOBDEF
 #endif /* NOBDEF */
+
+#if defined(__unix__) && !defined(_POSIX_C_SOURCE)
+#define _POSIX_C_SOURCE 200809L
+#endif
 
 #ifndef NOB_ASSERT
 #include <assert.h>
@@ -208,9 +212,9 @@
 NOBDEF void nob__panicf(const char *file, int line, const char *label, const char *format, ...);
 
 #define NOB_UNUSED(value) (void)(value)
-#define NOB_TODO(message) do { fprintf(stderr, "%s:%d: TODO: %s\n", __FILE__, __LINE__, message); fflush(NULL); abort(); } while(0)
+#define NOB_TODO(message) nob__panicf(__FILE__, __LINE__, "TODO", "%s", message)
 #define NOB_TODOF(...) nob__panicf(__FILE__, __LINE__, "TODO", __VA_ARGS__)
-#define NOB_UNREACHABLE(message) do { fprintf(stderr, "%s:%d: UNREACHABLE: %s\n", __FILE__, __LINE__, message); fflush(NULL); abort(); } while(0)
+#define NOB_UNREACHABLE(message) nob__panicf(__FILE__, __LINE__, "UNREACHABLE", "%s", message)
 #define NOB_UNREACHABLEF(...) nob__panicf(__FILE__, __LINE__, "UNREACHABLE", __VA_ARGS__)
 
 #define NOB_ARRAY_LEN(array) (sizeof(array)/sizeof(array[0]))
@@ -807,10 +811,10 @@ NOBDEF char *nob_temp_running_executable_path(void);
 
 #ifndef nob_cc
 #  if _WIN32
-#    if defined(__GNUC__)
-#       define nob_cc(cmd) nob_cmd_append(cmd, "cc")
-#    elif defined(__clang__)
+#    if defined(__clang__)
 #       define nob_cc(cmd) nob_cmd_append(cmd, "clang")
+#    elif defined(__GNUC__)
+#       define nob_cc(cmd) nob_cmd_append(cmd, "gcc")
 #    elif defined(_MSC_VER)
 #       define nob_cc(cmd) nob_cmd_append(cmd, "cl.exe")
 #    elif defined(__TINYC__)
@@ -1672,9 +1676,10 @@ NOBDEF Nob_Proc nob_cmd_run_async_redirect(Nob_Cmd cmd, Nob_Cmd_Redirect redirec
 
 static Nob_Proc nob__cmd_start_process(Nob_Cmd cmd, Nob_Fd *fdin, Nob_Fd *fdout, Nob_Fd *fderr)
 {
+    Nob_Proc proc = {.p = NOB_INVALID_PROC};
     if (cmd.count < 1) {
         nob_log(NOB_ERROR, "Could not run empty command");
-        return (Nob_Proc){.p = NOB_INVALID_PROC};
+        return proc;
     }
 
 #ifndef NOB_NO_ECHO
@@ -1713,24 +1718,25 @@ static Nob_Proc nob__cmd_start_process(Nob_Cmd cmd, Nob_Fd *fdin, Nob_Fd *fdout,
 
     if (!n) {
         nob_log(NOB_ERROR, "Could not create child process for \"%s\"", cmd.items[0]);
-        return (Nob_Proc){.p = NOB_INVALID_PROC};
+        return proc;
     }
 
     BOOL bSuccess = CreateProcessW(NULL, cmdLine, NULL, NULL, TRUE, 0, NULL, NULL, &siStartInfo, &piProcInfo);
 
     if (!bSuccess) {
         nob_log(NOB_ERROR, "Could not create child process for \"%s\": %s", cmd.items[0], nob_win32_error_message(GetLastError()));
-        return (Nob_Proc){.p = NOB_INVALID_PROC};
+        return proc;
     }
 
     CloseHandle(piProcInfo.hThread);
 
-    return (Nob_Proc){.p = piProcInfo.hProcess};
+    proc.p = piProcInfo.hProcess;
+    return proc;
 #else
     pid_t cpid = fork();
     if (cpid < 0) {
         nob_log(NOB_ERROR, "Could not fork child process: %s", strerror(errno));
-        return (Nob_Proc){.p = NOB_INVALID_PROC};
+        return proc;
     }
 
     if (cpid == 0) {
@@ -1746,7 +1752,6 @@ static Nob_Proc nob__cmd_start_process(Nob_Cmd cmd, Nob_Fd *fdin, Nob_Fd *fdout,
                 nob_log(NOB_ERROR, "Could not setup stdout for child process: %s", strerror(errno));
                 exit(1);
             }
-            close(*fdout);
         }
 
         if (fderr) {
@@ -1754,7 +1759,6 @@ static Nob_Proc nob__cmd_start_process(Nob_Cmd cmd, Nob_Fd *fdin, Nob_Fd *fdout,
                 nob_log(NOB_ERROR, "Could not setup stderr for child process: %s", strerror(errno));
                 exit(1);
             }
-            close(*fderr);
         }
 
         // NOTE: This leaks a bit of memory in the child process.
@@ -1770,7 +1774,8 @@ static Nob_Proc nob__cmd_start_process(Nob_Cmd cmd, Nob_Fd *fdin, Nob_Fd *fdout,
         NOB_UNREACHABLE("nob_cmd_run_async_redirect");
     }
 
-    return (Nob_Proc){.p = cpid};
+    proc.p = cpid;
+    return proc;
 #endif
 }
 
@@ -3556,6 +3561,8 @@ NOBDEF char *nob_temp_running_executable_path(void)
 /*
    Revision history:
 
+     3.10.1 (2026-10-28) Set _POSIX_C_SOURCE to 200809L for Unix environments (by @aalmkainzi)
+                         Make nob_cc check for clang first on _WIN32 (by @aalmkainzi)
      3.10.0 (2026-07-17) Make NOB_SVLIT a bit more usable at compile-time (by @Arhcout)
                          Add NOB_SVLIT_STATIC for when a compiler simply refuses to accept NOB_SVLIT() at compile-time (looking at you `cl.exe /TC`) (by @rexim)
       3.9.0 (2026-07-15) Add NOB_TODOF() and NOB_UNREACHABLEF()

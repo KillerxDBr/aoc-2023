@@ -253,7 +253,7 @@ int main(int argc, char **argv) {
 #ifdef _WIN32
     {
         const char *deps[] = {"manifest.rc", "utf8.xml"};
-        if (force || nob_needs_rebuild(res_obj, deps, ARRAY_LEN(deps)) > 0) {
+        if (force || needs_rebuild(res_obj, deps, ARRAY_LEN(deps)) > 0) {
             cmd_append(&cmd, "resinator");
             cmd_append(&cmd, "/d", "UNICODE");
             cmd_append(&cmd, "/d", "_UNICODE");
